@@ -1,6 +1,6 @@
 # BobbleheadRob
 
-The root landing page for [bobbleheadrob.com](https://bobbleheadrob.com/), Robert's personal collection of small browser games, useful tools, and curious experiments.
+The root landing page for [bobbleheadrob.com](https://bobbleheadrob.com/), a project-focused collection of useful tools and small games shaped by Rob and built with a small team of agents.
 
 ## Local preview
 

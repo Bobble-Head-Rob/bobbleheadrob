@@ -1,6 +1,6 @@
 # Project Status
 
-Last reviewed: 2026-07-20
+Last reviewed: 2026-07-21
 
 ## Current release
 
@@ -22,11 +22,14 @@ Pre-release landing-page revision complete and ready for final browser and infra
 - Same-host search crawler files, favicon, and original social preview image
 - Dedicated `public` deployment directory with planning documents excluded
 - No external requests, analytics, forms, or tracking
+- Project-first identity copy reflecting work shaped by Rob and built with a small team of agents
+- A brief personal note near the bottom of the homepage
 
 ## Release constraints
 
 - Preserve the existing identity mark and lime, coral, and blue palette
-- Preserve the current level of Robert attribution
+- Keep the homepage focused on projects, with concise Rob attribution
+- Acknowledge the small team of agents without making the agents the focus
 - Do not add contact or social links
 - Keep the Left Right Center description brief until launch
 

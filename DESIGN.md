@@ -2,7 +2,7 @@
 
 ## Direction
 
-The interface pairs workshop warmth with software precision. It should feel handmade and curious without becoming childish, nostalgic, or visually noisy.
+The interface pairs warmth with software precision. It should feel credible first and playful second: straightforward, lightly self-aware, and never corporate, childish, or visually noisy.
 
 ## Visual language
 
@@ -19,7 +19,7 @@ The interface pairs workshop warmth with software precision. It should feel hand
 
 1. The hero establishes identity and tone.
 2. The project shelf gives the live project visual priority while keeping the coming-soon project credible.
-3. The about section explains why the site exists.
+3. The personal note thanks visitors without turning the homepage into a biography.
 4. The footer closes with a compact brand repeat and current year.
 
 ## Responsive behavior
@@ -36,8 +36,10 @@ The layout is mobile-first. Project cards stack on small screens and become a tw
 - Motion is removed when `prefers-reduced-motion` is enabled.
 - Navigation uses actual links and the coming-soon project is not presented as interactive.
 
-## Decisions to confirm
+## Approved identity
 
-- Whether the abstract bobblehead mark should become the long-term identity or be replaced by a commissioned logo
-- Whether Robert wants personal attribution or contact/social links in the about area
-- Whether the accent palette should remain shared across projects or eventually adapt per project
+- The main brand is simply BobbleheadRob.
+- The existing mark and lime, coral, and blue palette remain in use.
+- The homepage stays focused on projects rather than personal biography.
+- Copy uses “Rob,” acknowledges the small team of agents, and avoids implying solo authorship.
+- Contact, social, support, donation, feedback, and bug-reporting links remain out of scope for now.

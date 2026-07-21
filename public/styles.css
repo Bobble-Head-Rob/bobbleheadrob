@@ -538,6 +538,13 @@ a.card-link:hover {
   font-size: clamp(1rem, 2vw, 1.18rem);
 }
 
+.note-signature {
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
 footer {
   display: flex;
   flex-wrap: wrap;
@@ -552,6 +559,10 @@ footer {
 
 footer p {
   margin: 0;
+}
+
+.footer-identity {
+  max-width: 39rem;
 }
 
 @keyframes bobble {
@@ -597,6 +608,10 @@ footer p {
   .about-grid {
     grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.85fr);
     align-items: start;
+  }
+
+  .footer-identity {
+    text-align: right;
   }
 }
 
