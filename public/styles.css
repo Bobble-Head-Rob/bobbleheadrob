@@ -197,7 +197,7 @@ h2 em {
 
 .orbit {
   position: absolute;
-  border: 1px solid var(--line);
+  border: 0.0625em solid var(--line);
   border-radius: 50%;
 }
 
@@ -216,7 +216,7 @@ h2 em {
   position: relative;
   display: grid;
   justify-items: center;
-  filter: drop-shadow(0 24px 30px rgba(0, 0, 0, 0.35));
+  filter: drop-shadow(0 1.5em 1.875em rgba(0, 0, 0, 0.35));
   animation: bobble 4s ease-in-out infinite;
   transform-origin: 50% 85%;
 }
@@ -225,36 +225,36 @@ h2 em {
   display: flex;
   align-items: center;
   justify-content: space-around;
-  width: 8.5rem;
-  height: 7.5rem;
-  border: 3px solid var(--paper);
+  width: 8.5em;
+  height: 7.5em;
+  border: 0.1875em solid var(--paper);
   border-radius: 48% 52% 46% 54%;
   background: var(--coral);
   transform: rotate(-4deg);
 }
 
 .bobble-face span {
-  width: 0.7rem;
-  height: 0.7rem;
+  width: 0.7em;
+  height: 0.7em;
   border-radius: 50%;
   background: var(--paper);
 }
 
 .bobble-spring {
-  width: 1.6rem;
-  height: 3rem;
-  background: repeating-linear-gradient(175deg, transparent 0 5px, var(--lime) 6px 9px);
+  width: 1.6em;
+  height: 3em;
+  background: repeating-linear-gradient(175deg, transparent 0 0.3125em, var(--lime) 0.375em 0.5625em);
 }
 
 .bobble-base {
   display: grid;
   place-items: center;
-  width: 8rem;
-  height: 4.5rem;
+  width: calc(8em / 1.7);
+  height: calc(4.5em / 1.7);
   border-radius: 50% 50% 18% 18%;
   background: var(--blue);
   color: var(--paper);
-  font-size: 1.7rem;
+  font-size: 1.7em;
   font-weight: 950;
   letter-spacing: -0.08em;
 }
@@ -262,7 +262,7 @@ h2 em {
 .spark {
   position: absolute;
   color: var(--lime);
-  font-size: 2rem;
+  font-size: 2em;
 }
 
 .spark-one {
@@ -553,21 +553,15 @@ footer p {
 
 @keyframes bobble {
   0%, 100% { transform: rotate(-2deg) translateY(0); }
-  50% { transform: rotate(3deg) translateY(-6px); }
+  50% { transform: rotate(3deg) translateY(-0.375em); }
 }
 
 @media (max-width: 47.999rem) {
   .hero-object {
-    width: 8.5rem;
-    min-height: 15rem;
-    margin-top: 1rem;
-    justify-self: end;
-    aspect-ratio: auto;
-  }
-
-  .hero-object .orbit,
-  .hero-object .spark {
-    display: none;
+    width: 21em;
+    margin-block: 1.5rem 0.5rem;
+    justify-self: center;
+    font-size: 0.625rem;
   }
 }
 
