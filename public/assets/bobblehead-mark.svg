@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">BobbleheadRob mark</title>
+  <rect width="64" height="64" rx="18" fill="#b8e86f"/>
+  <path d="M20 22c0-8 5-13 12-13s12 5 12 13-5 13-12 13-12-5-12-13Z" fill="#ff826c" stroke="#101215" stroke-width="3"/>
+  <circle cx="27" cy="21" r="2" fill="#101215"/>
+  <circle cx="37" cy="21" r="2" fill="#101215"/>
+  <path d="M29 29c2 1 4 1 6 0M29 36l-2 8m8-8 2 8" fill="none" stroke="#101215" stroke-width="3" stroke-linecap="round"/>
+  <path d="M18 48c0-4 4-7 9-7h10c5 0 9 3 9 7v7H18v-7Z" fill="#6bbfe5" stroke="#101215" stroke-width="3"/>
+</svg>
