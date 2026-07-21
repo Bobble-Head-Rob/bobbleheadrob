@@ -133,12 +133,6 @@ nav a:hover {
   text-transform: uppercase;
 }
 
-.eyebrow span {
-  display: inline-block;
-  margin-right: 0.35rem;
-  font-size: 0.55rem;
-}
-
 h1,
 h2,
 h3,
@@ -196,7 +190,7 @@ h2 em {
 
 .hero-object {
   position: relative;
-  display: none;
+  display: grid;
   place-items: center;
   aspect-ratio: 1;
 }
@@ -560,6 +554,21 @@ footer p {
 @keyframes bobble {
   0%, 100% { transform: rotate(-2deg) translateY(0); }
   50% { transform: rotate(3deg) translateY(-6px); }
+}
+
+@media (max-width: 47.999rem) {
+  .hero-object {
+    width: 8.5rem;
+    min-height: 15rem;
+    margin-top: 1rem;
+    justify-self: end;
+    aspect-ratio: auto;
+  }
+
+  .hero-object .orbit,
+  .hero-object .spark {
+    display: none;
+  }
 }
 
 @media (min-width: 48rem) {
