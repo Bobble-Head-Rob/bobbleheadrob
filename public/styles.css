@@ -288,8 +288,6 @@ h2 em {
 }
 
 .section-heading {
-  display: grid;
-  gap: 1rem;
   margin-bottom: 2.5rem;
 }
 
@@ -298,11 +296,6 @@ h2 em {
   margin-bottom: 0;
   font-size: clamp(2.3rem, 6vw, 4.75rem);
   letter-spacing: -0.055em;
-}
-
-.section-heading > p {
-  max-width: 24rem;
-  color: var(--muted);
 }
 
 .project-grid {
@@ -590,11 +583,6 @@ footer p {
 
   .hero-object {
     display: grid;
-  }
-
-  .section-heading {
-    grid-template-columns: 1fr auto;
-    align-items: end;
   }
 
   .project-grid {
