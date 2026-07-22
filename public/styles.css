@@ -82,9 +82,12 @@ footer {
 
 .site-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 0.5rem 1rem;
   min-height: 5rem;
+  padding-block: 0.75rem;
   border-bottom: 1px solid var(--line);
 }
 
@@ -102,6 +105,7 @@ footer {
 nav {
   display: flex;
   gap: 1rem;
+  margin-left: auto;
 }
 
 nav a {
@@ -529,6 +533,38 @@ a.card-link:hover {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.85rem;
   font-weight: 800;
+}
+
+.contact {
+  padding-block: clamp(3.5rem, 8vw, 6rem);
+  border-top: 1px solid var(--line);
+}
+
+.contact h2 {
+  margin-bottom: 0.75rem;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  letter-spacing: -0.035em;
+}
+
+.contact p {
+  max-width: 34rem;
+  margin-bottom: 1rem;
+  color: var(--muted);
+}
+
+.contact-email {
+  display: inline-block;
+  color: var(--lime);
+  font-weight: 800;
+  overflow-wrap: anywhere;
+  text-decoration-thickness: 0.1em;
+  text-underline-offset: 0.3em;
+  transition: color 160ms ease;
+}
+
+.contact-email:hover,
+.contact-email:focus-visible {
+  color: var(--ink);
 }
 
 footer {

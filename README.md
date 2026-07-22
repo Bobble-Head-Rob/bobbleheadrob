@@ -2,6 +2,8 @@
 
 The root landing page for [bobbleheadrob.com](https://bobbleheadrob.com/), a project-focused collection of useful tools and small games shaped by Rob and built with a small team of agents.
 
+The homepage also provides the public contact address `rob@bobbleheadrob.com` for bug reports, ideas, and general messages.
+
 ## Local preview
 
 The site has no build step or dependencies. Serve the deployable `public` directory with any static server, for example:

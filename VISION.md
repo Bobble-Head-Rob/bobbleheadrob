@@ -29,4 +29,5 @@ Every listed project should be understandable at a glance, easy to open, and hon
 - The root domain gives every BobbleheadRob project a credible shared home.
 - Guitar Key Compass is immediately discoverable.
 - Left Right Center has a clear place in the collection without suggesting it is available early.
+- Visitors can reach Rob through one clear public email address.
 - Adding the next project is straightforward and visually consistent.

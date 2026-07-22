@@ -20,11 +20,12 @@ The interface pairs warmth with software precision. It should feel credible firs
 1. The hero establishes identity and tone.
 2. The project shelf gives the live project visual priority while keeping the coming-soon project credible.
 3. The personal note thanks visitors without turning the homepage into a biography.
-4. The footer closes with a compact brand repeat and current year.
+4. A lightweight contact section provides one direct email address.
+5. The footer closes with a compact brand repeat and current year.
 
 ## Responsive behavior
 
-The layout is mobile-first. Project cards stack on small screens and become a two-column shelf at tablet sizes. The decorative hero object is hidden on small screens so the message and live project remain prominent.
+The layout is mobile-first. Project cards stack on small screens and become a two-column shelf at tablet sizes. The full decorative hero composition scales down and centers beneath the primary action on small screens.
 
 ## Accessibility
 
@@ -42,4 +43,4 @@ The layout is mobile-first. Project cards stack on small screens and become a tw
 - The existing mark and lime, coral, and blue palette remain in use.
 - The homepage stays focused on projects rather than personal biography.
 - Copy uses “Rob,” acknowledges the small team of agents, and avoids implying solo authorship.
-- Contact, social, support, donation, feedback, and bug-reporting links remain out of scope for now.
+- Basic contact is limited to the public email address; forms, social links, support promises, and additional contact channels remain out of scope.
