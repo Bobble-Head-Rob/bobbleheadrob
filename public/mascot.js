@@ -8,11 +8,13 @@
   }
 
   const face = mascot.querySelector(".bobble-face");
+  const base = mascot.querySelector(".bobble-base");
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const renderedProperties = new Map();
   const edge = 6;
   const state = {
     mode: "docked",
+    grabMode: null,
     pointerId: null,
     dragOriginX: 0,
     dragOriginY: 0,
@@ -21,6 +23,10 @@
     dragVelocityX: 0,
     dragVelocityY: 0,
     dragUpdatedAt: 0,
+    headAnchorOriginX: 0,
+    headAnchorOriginY: 0,
+    headAnchorX: 0,
+    headAnchorY: 0,
     x: 0,
     y: 0,
     vx: 0,
@@ -77,7 +83,12 @@
     idleImpulseStrength: 8,
     dragPositionCoupling: 0.82,
     dragVelocityCoupling: 0.16,
-    bodyAccelerationCoupling: 0.62
+    bodyAccelerationCoupling: 0.62,
+    headGrabBaseStiffness: 44,
+    headGrabBaseDamping: 13.5,
+    headGrabMaximumAcceleration: 5200,
+    headGrabMaximumVelocity: 680,
+    headReleaseTransfer: 0.72
   };
 
   const geometry = {
@@ -92,6 +103,16 @@
   };
 
   const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+  const clampVectorMagnitude = (x, y, maximum) => {
+    const magnitude = Math.hypot(x, y);
+
+    if (magnitude <= maximum) {
+      return { x, y };
+    }
+
+    const scale = maximum / magnitude;
+    return { x: x * scale, y: y * scale };
+  };
   const numericProperty = (styles, name, fallback) => {
     const value = Number.parseFloat(styles.getPropertyValue(name));
     return Number.isFinite(value) ? value : fallback;
@@ -124,14 +145,81 @@
     };
   };
 
-  const clampHeadState = () => {
-    const normalizedX = state.headOffsetX / geometry.maximumHeadDisplacement;
-    const normalizedY = state.headOffsetY / geometry.maximumVerticalDisplacement;
-    const magnitude = Math.hypot(normalizedX, normalizedY);
+  const toWorldVector = (x, y) => {
+    const radians = state.rotation * Math.PI / 180;
+    const cosine = Math.cos(radians);
+    const sine = Math.sin(radians);
 
-    if (magnitude > 1) {
-      state.headOffsetX /= magnitude;
-      state.headOffsetY /= magnitude;
+    return {
+      x: x * cosine - y * sine,
+      y: x * sine + y * cosine
+    };
+  };
+
+  const headAttachmentWorld = (
+    offsetX = state.headOffsetX,
+    offsetY = state.headOffsetY
+  ) => {
+    const originX = geometry.bodyWidth * 0.5;
+    const originY = geometry.bodyHeight * 0.85;
+    const attachmentY = geometry.unit * 7.5;
+    const fromOrigin = toWorldVector(offsetX, attachmentY + offsetY - originY);
+
+    return {
+      x: state.x + originX + fromOrigin.x,
+      y: state.y + originY + fromOrigin.y
+    };
+  };
+
+  const basePositionForHeadAnchor = (anchorX, anchorY, offsetX = 0, offsetY = 0) => {
+    const originX = geometry.bodyWidth * 0.5;
+    const originY = geometry.bodyHeight * 0.85;
+    const attachmentY = geometry.unit * 7.5;
+    const fromOrigin = toWorldVector(offsetX, attachmentY + offsetY - originY);
+
+    return {
+      x: anchorX - originX - fromOrigin.x,
+      y: anchorY - originY - fromOrigin.y
+    };
+  };
+
+  const headOffsetForAnchor = (anchorX, anchorY) => {
+    const originX = geometry.bodyWidth * 0.5;
+    const originY = geometry.bodyHeight * 0.85;
+    const attachmentY = geometry.unit * 7.5;
+    const fromOrigin = toBaseLocal(
+      anchorX - state.x - originX,
+      anchorY - state.y - originY
+    );
+
+    return {
+      x: fromOrigin.x,
+      y: fromOrigin.y + originY - attachmentY
+    };
+  };
+
+  const boundedHeadOffset = (x, y, limitScale = 1) => {
+    const maximumX = geometry.maximumHeadDisplacement * limitScale;
+    const maximumY = geometry.maximumVerticalDisplacement * limitScale;
+    const magnitude = Math.hypot(x / maximumX, y / maximumY);
+
+    if (magnitude <= 1) {
+      return { x, y, clamped: false };
+    }
+
+    return {
+      x: x / magnitude,
+      y: y / magnitude,
+      clamped: true
+    };
+  };
+
+  const clampHeadState = () => {
+    const bounded = boundedHeadOffset(state.headOffsetX, state.headOffsetY);
+
+    if (bounded.clamped) {
+      state.headOffsetX = bounded.x;
+      state.headOffsetY = bounded.y;
       state.headVelocityX *= 0.55;
       state.headVelocityY *= 0.55;
     }
@@ -346,6 +434,31 @@
     requestFrame();
   };
 
+  const distanceToRect = (x, y, rect) => {
+    const dx = Math.max(rect.left - x, 0, x - rect.right);
+    const dy = Math.max(rect.top - y, 0, y - rect.bottom);
+    return Math.hypot(dx, dy);
+  };
+
+  const grabModeForPointer = (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+
+    if (target?.closest(".bobble-face")) {
+      return "head";
+    }
+
+    if (target?.closest(".bobble-base")) {
+      return "base";
+    }
+
+    const faceRect = face.getBoundingClientRect();
+    const baseRect = base.getBoundingClientRect();
+    const faceDistance = distanceToRect(event.clientX, event.clientY, faceRect);
+    const baseDistance = distanceToRect(event.clientX, event.clientY, baseRect);
+
+    return faceDistance <= baseDistance ? "head" : "base";
+  };
+
   const onPointerDown = (event) => {
     if (event.button !== undefined && event.button !== 0) {
       return;
@@ -357,6 +470,7 @@
 
     event.preventDefault();
     clearReturnTimer();
+    const grabMode = grabModeForPointer(event);
 
     if (state.mode === "docked") {
       enterLooseMode();
@@ -367,6 +481,7 @@
     const baseScaleY = numericProperty(styles, "--base-scale-y", 1);
 
     state.mode = "dragging";
+    state.grabMode = grabMode;
     state.pointerId = event.pointerId;
     state.dragOriginX = state.x;
     state.dragOriginY = state.y;
@@ -381,6 +496,11 @@
     state.dragVelocityX = 0;
     state.dragVelocityY = 0;
     state.dragUpdatedAt = performance.now();
+    const headAnchor = headAttachmentWorld();
+    state.headAnchorOriginX = headAnchor.x;
+    state.headAnchorOriginY = headAnchor.y;
+    state.headAnchorX = headAnchor.x;
+    state.headAnchorY = headAnchor.y;
     state.samples = [];
     addSample(event);
     mascot.classList.add("is-dragging");
@@ -396,38 +516,51 @@
     }
 
     event.preventDefault();
-    const bounds = viewportBounds();
-    const previousX = state.x;
-    const previousY = state.y;
-    const nextX = clamp(
-      state.dragOriginX + event.clientX - state.dragPointerX,
-      bounds.minX,
-      bounds.maxX
-    );
-    const nextY = clamp(
-      state.dragOriginY + event.clientY - state.dragPointerY,
-      bounds.minY,
-      bounds.maxY
-    );
-    const movement = toBaseLocal(nextX - previousX, nextY - previousY);
     const now = performance.now();
     const elapsed = Math.max((now - state.dragUpdatedAt) / 1000, 0.008);
-    const velocityX = movement.x / elapsed;
-    const velocityY = movement.y / elapsed;
-    const motion = reducedMotion.matches ? 0.18 : 1;
 
-    state.x = nextX;
-    state.y = nextY;
-    state.headOffsetX -= movement.x * tuning.dragPositionCoupling * motion;
-    state.headOffsetY -= movement.y * tuning.dragPositionCoupling * motion;
-    state.headVelocityX -=
-      (velocityX - state.dragVelocityX) * tuning.dragVelocityCoupling * motion;
-    state.headVelocityY -=
-      (velocityY - state.dragVelocityY) * tuning.dragVelocityCoupling * motion;
-    state.dragVelocityX = velocityX;
-    state.dragVelocityY = velocityY;
+    if (state.grabMode === "head") {
+      const nextAnchorX =
+        state.headAnchorOriginX + event.clientX - state.dragPointerX;
+      const nextAnchorY =
+        state.headAnchorOriginY + event.clientY - state.dragPointerY;
+      state.dragVelocityX = (nextAnchorX - state.headAnchorX) / elapsed;
+      state.dragVelocityY = (nextAnchorY - state.headAnchorY) / elapsed;
+      state.headAnchorX = nextAnchorX;
+      state.headAnchorY = nextAnchorY;
+    } else {
+      const bounds = viewportBounds();
+      const previousX = state.x;
+      const previousY = state.y;
+      const nextX = clamp(
+        state.dragOriginX + event.clientX - state.dragPointerX,
+        bounds.minX,
+        bounds.maxX
+      );
+      const nextY = clamp(
+        state.dragOriginY + event.clientY - state.dragPointerY,
+        bounds.minY,
+        bounds.maxY
+      );
+      const movement = toBaseLocal(nextX - previousX, nextY - previousY);
+      const velocityX = movement.x / elapsed;
+      const velocityY = movement.y / elapsed;
+      const motion = reducedMotion.matches ? 0.18 : 1;
+
+      state.x = nextX;
+      state.y = nextY;
+      state.headOffsetX -= movement.x * tuning.dragPositionCoupling * motion;
+      state.headOffsetY -= movement.y * tuning.dragPositionCoupling * motion;
+      state.headVelocityX -=
+        (velocityX - state.dragVelocityX) * tuning.dragVelocityCoupling * motion;
+      state.headVelocityY -=
+        (velocityY - state.dragVelocityY) * tuning.dragVelocityCoupling * motion;
+      state.dragVelocityX = velocityX;
+      state.dragVelocityY = velocityY;
+      clampHeadState();
+    }
+
     state.dragUpdatedAt = now;
-    clampHeadState();
     addSample(event);
     requestFrame();
   };
@@ -442,12 +575,35 @@
     }
 
     const fling = cancelled ? { x: 0, y: 0 } : flingVelocity();
-    const nextVX = reducedMotion.matches ? 0 : fling.x;
-    const nextVY = reducedMotion.matches ? 0 : fling.y;
-    const localVelocity = toBaseLocal(nextVX, nextVY);
-    const releaseMotion = reducedMotion.matches ? 0.12 : tuning.dragVelocityCoupling;
-    state.headVelocityX -= (localVelocity.x - state.dragVelocityX) * releaseMotion;
-    state.headVelocityY -= (localVelocity.y - state.dragVelocityY) * releaseMotion;
+    let nextVX = 0;
+    let nextVY = 0;
+
+    if (cancelled && state.grabMode === "head") {
+      state.headVelocityX = 0;
+      state.headVelocityY = 0;
+    } else if (!reducedMotion.matches && state.grabMode === "head") {
+      const retainedBaseX = clamp(state.vx, -tuning.maxFling, tuning.maxFling);
+      const retainedBaseY = clamp(state.vy, -tuning.maxFling, tuning.maxFling);
+      nextVX =
+        fling.x * tuning.headReleaseTransfer +
+        retainedBaseX * (1 - tuning.headReleaseTransfer);
+      nextVY =
+        fling.y * tuning.headReleaseTransfer +
+        retainedBaseY * (1 - tuning.headReleaseTransfer);
+      const relativeVelocity = toBaseLocal(fling.x - nextVX, fling.y - nextVY);
+      state.headVelocityX = relativeVelocity.x;
+      state.headVelocityY = relativeVelocity.y;
+    } else {
+      nextVX = reducedMotion.matches ? 0 : fling.x;
+      nextVY = reducedMotion.matches ? 0 : fling.y;
+      const localVelocity = toBaseLocal(nextVX, nextVY);
+      const releaseMotion = reducedMotion.matches ? 0.12 : tuning.dragVelocityCoupling;
+      state.headVelocityX -=
+        (localVelocity.x - state.dragVelocityX) * releaseMotion;
+      state.headVelocityY -=
+        (localVelocity.y - state.dragVelocityY) * releaseMotion;
+    }
+
     state.mode = "loose";
     state.pointerId = null;
     state.vx = nextVX;
@@ -455,6 +611,7 @@
     state.angularVelocity = reducedMotion.matches ? 0 : clamp(fling.x * 0.075, -120, 120);
     state.dragVelocityX = 0;
     state.dragVelocityY = 0;
+    state.grabMode = null;
     clampHeadState();
     mascot.classList.remove("is-dragging");
 
@@ -594,7 +751,105 @@
     };
   };
 
+  const integrateHeadGrab = (dt) => {
+    const previousHeadX = state.headOffsetX;
+    const previousHeadY = state.headOffsetY;
+    const targetBase = basePositionForHeadAnchor(
+      state.headAnchorX,
+      state.headAnchorY
+    );
+    const stiffness = reducedMotion.matches
+      ? tuning.headGrabBaseStiffness * 2.2
+      : tuning.headGrabBaseStiffness;
+    const damping = reducedMotion.matches
+      ? tuning.headGrabBaseDamping * 1.65
+      : tuning.headGrabBaseDamping;
+    const maximumAcceleration = reducedMotion.matches
+      ? tuning.headGrabMaximumAcceleration * 0.75
+      : tuning.headGrabMaximumAcceleration;
+    const maximumVelocity = reducedMotion.matches
+      ? tuning.headGrabMaximumVelocity * 0.55
+      : tuning.headGrabMaximumVelocity;
+    const limitScale = reducedMotion.matches ? 0.35 : 1;
+    const maximumX = geometry.maximumHeadDisplacement * limitScale;
+    const maximumY = geometry.maximumVerticalDisplacement * limitScale;
+    const stepCount = Math.max(1, Math.ceil(dt / (1 / 120)));
+    const step = dt / stepCount;
+    let bounded = boundedHeadOffset(
+      state.headOffsetX,
+      state.headOffsetY,
+      limitScale
+    );
+
+    for (let index = 0; index < stepCount; index += 1) {
+      const acceleration = clampVectorMagnitude(
+        (targetBase.x - state.x) * stiffness - state.vx * damping,
+        (targetBase.y - state.y) * stiffness - state.vy * damping,
+        maximumAcceleration
+      );
+      const velocity = clampVectorMagnitude(
+        state.vx + acceleration.x * step,
+        state.vy + acceleration.y * step,
+        maximumVelocity
+      );
+
+      state.vx = velocity.x;
+      state.vy = velocity.y;
+      state.x += state.vx * step;
+      state.y += state.vy * step;
+
+      const rawOffset = headOffsetForAnchor(
+        state.headAnchorX,
+        state.headAnchorY
+      );
+      bounded = boundedHeadOffset(rawOffset.x, rawOffset.y, limitScale);
+
+      if (bounded.clamped) {
+        const constrainedBase = basePositionForHeadAnchor(
+          state.headAnchorX,
+          state.headAnchorY,
+          bounded.x,
+          bounded.y
+        );
+        state.x = constrainedBase.x;
+        state.y = constrainedBase.y;
+
+        const gradientX = bounded.x / (maximumX * maximumX);
+        const gradientY = bounded.y / (maximumY * maximumY);
+        const gradientLength = Math.hypot(gradientX, gradientY);
+
+        if (gradientLength > 0) {
+          const normal = toWorldVector(
+            gradientX / gradientLength,
+            gradientY / gradientLength
+          );
+          const followerOutwardVelocity =
+            -(state.vx * normal.x + state.vy * normal.y);
+
+          if (followerOutwardVelocity > 0) {
+            state.vx += normal.x * followerOutwardVelocity;
+            state.vy += normal.y * followerOutwardVelocity;
+          }
+        }
+      }
+    }
+
+    state.headOffsetX = bounded.x;
+    state.headOffsetY = bounded.y;
+    state.headVelocityX = (state.headOffsetX - previousHeadX) / dt;
+    state.headVelocityY = (state.headOffsetY - previousHeadY) / dt;
+    state.headAngularVelocity = 0;
+    clampHeadState();
+  };
+
   const integrateHead = (dt, now) => {
+    const pointer = pointerTargets();
+
+    if (state.mode === "dragging" && state.grabMode === "head") {
+      integrateHeadGrab(dt);
+      return pointer;
+    }
+
     if (
       state.mode === "dragging" &&
       state.dragUpdatedAt &&
@@ -608,7 +863,6 @@
       state.dragVelocityY = 0;
     }
 
-    const pointer = pointerTargets();
     const looseInfluence = state.mode === "docked" ? 1 : 0.35;
     const scrollInfluence = state.mode === "docked" ? 1 : 0.18;
     const scroll = clamp(state.scrollVelocity / 1400, -1, 1) * scrollInfluence;

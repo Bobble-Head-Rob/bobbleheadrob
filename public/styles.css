@@ -271,7 +271,7 @@ h2 em {
   border: 0.1875em solid var(--paper);
   border-radius: 48% 52% 46% 54%;
   background: var(--coral);
-  pointer-events: none;
+  pointer-events: auto;
   transform: translate3d(calc(-50% + var(--head-x)), var(--head-y), 0)
     rotate(calc(-4deg + var(--head-rotation)));
   transform-origin: 50% 100%;
@@ -295,7 +295,7 @@ h2 em {
   width: 1.6em;
   height: var(--spring-length);
   background: repeating-linear-gradient(175deg, transparent 0 0.3125em, var(--lime) 0.375em 0.5625em);
-  pointer-events: none;
+  pointer-events: auto;
   transform: rotate(var(--spring-angle));
   transform-origin: 50% 100%;
   will-change: transform;
@@ -316,7 +316,7 @@ h2 em {
   font-size: 1.7em;
   font-weight: 950;
   letter-spacing: -0.08em;
-  pointer-events: none;
+  pointer-events: auto;
   transform: translate3d(-50%, var(--base-y), 0)
     rotate(var(--base-rotation))
     scale(var(--base-scale-x), var(--base-scale-y));
