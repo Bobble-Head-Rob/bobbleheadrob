@@ -1,10 +1,10 @@
 # Project Status
 
-Last reviewed: 2026-07-22
+Last reviewed: 2026-07-23
 
 ## Current release
 
-Pre-release landing-page revision complete and ready for final browser and infrastructure verification.
+Interactive mascot prototype complete and ready for final manual and infrastructure verification.
 
 ### Included projects
 
@@ -25,6 +25,26 @@ Pre-release landing-page revision complete and ready for final browser and infra
 - Project-first identity copy reflecting work shaped by Rob and built with a small team of agents
 - A brief personal note near the bottom of the homepage
 - A lightweight contact section linking to `rob@bobbleheadrob.com`
+- Pointer-aware, draggable hero mascot with capped fling physics, viewport collisions, impact response, and automatic return
+- Separate head, spring, eye, base, shadow, and body motion with scroll awareness and an organic docked idle
+- Reduced-motion behavior that preserves eye tracking and direct dragging while suppressing fling and sustained motion
+- Visibility, resize, orientation, and offscreen safeguards that reduce work and keep a loose mascot reachable
+
+### Implementation-agent validation completed
+
+- Automated headless-browser checks at 1440px, 768px, 390px, and 320px with no horizontal overflow
+- Mouse-event fling plus synthetic touch-event drag, collision reachability, settle-and-return, and return cancellation
+- Automated resize-while-loose, docked scroll reaction, eye tracking, reduced-motion, and transformed re-grab checks
+- Source-level JavaScript syntax, page-link, fragment-target, metadata, XML, and deployment-file-scope checks
+
+### Independent and real-device validation outstanding
+
+- Independent visual and interaction review in ordinary desktop and mobile browsers
+- Physical touch-device testing on representative iOS and Android hardware
+- Manual keyboard-only navigation and operating-system reduced-motion review
+- Subjective tuning review for startle intensity, hard impacts, and return timing
+
+The current physics tuning is intentionally conservative. Real-device follow-up should focus on touch release feel, high-refresh displays, and whether the return delay feels patient rather than slow. The homepage mascot remains separate from the future **Fling Pet** project, which would require its own product and accessibility decisions.
 
 ## Release constraints
 
@@ -49,7 +69,6 @@ Pre-release landing-page revision complete and ready for final browser and infra
 
 ## Not done by design
 
-- No deployment or Cloudflare Pages project setup
-- No commit or remote push
+- No deployment performed as part of this work
 - No speculative URL for Left Right Center
 - No analytics or visitor tracking

@@ -2,13 +2,14 @@
 
 ## Overview
 
-BobbleheadRob is a dependency-free static website. A browser requests three primary files—HTML, CSS, and JavaScript—plus a small SVG mark. There is no compile step, server runtime, framework, package manager, or client-side router.
+BobbleheadRob is a dependency-free static website. A browser requests HTML, CSS, two small JavaScript files, and site-owned visual assets. There is no compile step, server runtime, framework, package manager, or client-side router.
 
 ## File responsibilities
 
 - `public/index.html` owns content, semantics, links, metadata, and structured data.
 - `public/styles.css` owns the layout, design tokens, responsive rules, illustrations, focus states, and reduced-motion behavior.
 - `public/app.js` performs one nonessential enhancement: keeping the footer year current.
+- `public/mascot.js` contains the optional mascot input, physics state, and animation rendering.
 - `public/assets/` contains the favicon, visual mark, and social preview image.
 - `public/robots.txt` and `public/sitemap.xml` support search discovery.
 - Root Markdown files contain project guidance and are excluded from deployment.
@@ -16,6 +17,18 @@ BobbleheadRob is a dependency-free static website. A browser requests three prim
 ## Runtime model
 
 The page remains complete if JavaScript fails or is disabled. There are no runtime network calls, cookies, local storage, analytics, third-party fonts, or external assets.
+
+## Mascot runtime
+
+The rings, star, and plus remain normal hero decorations. Only the `.bobble` character becomes interactive. It stays in the document flow while docked and switches to viewport-fixed positioning while dragged, thrown, or returning, preventing the interaction from reflowing the page.
+
+Pointer events provide one mouse, pen, and touch path with pointer capture and a preserved grab offset. Recent pointer samples produce a capped release velocity. A `requestAnimationFrame` loop integrates gravity, drag, angular momentum, restitution, collision insets, settling, and a damped magnetic return. Head, spring, base, eyes, shadow, and body transforms render independently from the body physics state.
+
+The loop throttles the docked idle animation, pauses on hidden tabs, and stops while a loose character is fully settled and waiting to return. When `IntersectionObserver` is supported, it also suspends the docked loop while the hero is outside the viewport; browsers without that API retain the throttled docked loop. Resize and orientation changes recalculate viewport bounds, and loose characters are clamped back into reach.
+
+Primary tuning values—gravity, drag, restitution, fling cap, head spring, and return spring—live together near the top of `public/mascot.js`. Current limitations are intentional: one active pointer at a time, no persisted mascot position, and return waits until the original hero dock is visible and reachable.
+
+This code is a homepage-specific interaction prototype. A future **Fling Pet** project should treat its game loop, progression, assets, and accessibility model as a separate product rather than expanding the landing-page module into a game.
 
 ## URL policy
 

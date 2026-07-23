@@ -25,7 +25,13 @@ The interface pairs warmth with software precision. It should feel credible firs
 
 ## Responsive behavior
 
-The layout is mobile-first. Project cards stack on small screens and become a two-column shelf at tablet sizes. The full decorative hero composition scales down and centers beneath the primary action on small screens.
+The layout is mobile-first. Project cards stack on small screens and become a two-column shelf at tablet sizes. The full decorative hero composition scales down and centers beneath the primary action on small screens. When the character is loose, viewport-relative transforms keep it reachable without changing the hero or project layout.
+
+## Mascot behavior
+
+The mascot should feel observant and pleasantly physical, not frantic. Near-pointer eye tracking and head lean are restrained; fast approaches can produce a brief recoil. Dragging preserves the grab point, releases can carry momentum, impacts compress the character slightly, and the head and spring lag behind the base. Scroll reactions are strongest at the hero dock and deliberately reduced while the mascot is loose.
+
+Slow overlapping idle rhythms replace a mechanical repeating nod. Shadow offset, small scale changes, and restrained parallax add depth without changing the established flat geometric construction. The rings, star, and plus stay anchored as part of the original composition.
 
 ## Accessibility
 
@@ -34,8 +40,9 @@ The layout is mobile-first. Project cards stack on small screens and become a tw
 - Focus states use a visible blue outline.
 - Text and controls use high-contrast foreground colors.
 - Decorative objects are hidden from assistive technology.
-- Motion is removed when `prefers-reduced-motion` is enabled.
+- `prefers-reduced-motion` removes sustained idle, startle, fling, and impact motion while preserving eye tracking and direct dragging.
 - Navigation uses actual links and the coming-soon project is not presented as interactive.
+- The mascot is decorative, hidden from assistive technology, and excluded from the keyboard focus order.
 
 ## Approved identity
 
