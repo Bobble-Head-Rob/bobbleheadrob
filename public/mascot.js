@@ -98,8 +98,8 @@
     springRestLength: 48,
     maximumHeadDisplacement: 36,
     maximumVerticalDisplacement: 27,
-    dockX: 0,
-    dockY: 0
+    dockDocumentX: 0,
+    dockDocumentY: 0
   };
 
   const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
@@ -118,10 +118,12 @@
     return Number.isFinite(value) ? value : fallback;
   };
 
-  const updateDockTarget = () => {
+  const updateDockDocumentTarget = () => {
     const hostRect = mascot.closest(".hero-object").getBoundingClientRect();
-    geometry.dockX = hostRect.left + (hostRect.width - geometry.bodyWidth) / 2;
-    geometry.dockY = hostRect.top + (hostRect.height - geometry.bodyHeight) / 2;
+    geometry.dockDocumentX =
+      hostRect.left + window.scrollX + (hostRect.width - geometry.bodyWidth) / 2;
+    geometry.dockDocumentY =
+      hostRect.top + window.scrollY + (hostRect.height - geometry.bodyHeight) / 2;
   };
 
   const updateGeometry = () => {
@@ -131,7 +133,7 @@
     geometry.springRestLength = geometry.unit * 3;
     geometry.maximumHeadDisplacement = geometry.unit * tuning.maximumHeadDisplacement;
     geometry.maximumVerticalDisplacement = geometry.maximumHeadDisplacement * 0.75;
-    updateDockTarget();
+    updateDockDocumentTarget();
   };
 
   const toBaseLocal = (x, y) => {
@@ -257,21 +259,9 @@
 
   const dockTarget = () => {
     return {
-      x: geometry.dockX,
-      y: geometry.dockY
+      x: geometry.dockDocumentX - window.scrollX,
+      y: geometry.dockDocumentY - window.scrollY
     };
-  };
-
-  const dockIsReachable = () => {
-    const target = dockTarget();
-    const bounds = viewportBounds();
-
-    return (
-      target.x >= bounds.minX - 1 &&
-      target.x <= bounds.maxX + 1 &&
-      target.y >= bounds.minY - 1 &&
-      target.y <= bounds.maxY + 1
-    );
   };
 
   const setProperties = (values) => {
@@ -295,10 +285,8 @@
 
     state.returnTimer = window.setTimeout(() => {
       state.returnTimer = 0;
-      updateDockTarget();
 
-      if (state.mode !== "loose" || !dockIsReachable()) {
-        scheduleReturn();
+      if (state.mode !== "loose") {
         return;
       }
 
@@ -665,16 +653,6 @@
     const previousVY = state.vy;
 
     if (state.mode === "returning") {
-      if (!dockIsReachable()) {
-        state.mode = "loose";
-        state.vx = 0;
-        state.vy = 0;
-        state.angularVelocity = 0;
-        applyBodyVelocityChange(previousVX, previousVY);
-        scheduleReturn();
-        return;
-      }
-
       const target = dockTarget();
       const stiffness = reducedMotion.matches ? 10 : tuning.returnStiffness;
       const damping = reducedMotion.matches ? 7.5 : tuning.returnDamping;
@@ -1010,7 +988,6 @@
     state.scrollVelocity = clamp((nextY - state.lastScrollY) / elapsed, -2400, 2400);
     state.lastScrollY = nextY;
     state.lastScrollAt = now;
-    updateDockTarget();
     requestFrame();
   };
 
@@ -1018,18 +995,10 @@
     updateGeometry();
     clampHeadState();
 
-    if (state.mode !== "docked") {
+    if (state.mode !== "docked" && state.mode !== "returning") {
       const bounds = viewportBounds();
       state.x = clamp(state.x, bounds.minX, bounds.maxX);
       state.y = clamp(state.y, bounds.minY, bounds.maxY);
-
-      if (state.mode === "returning" && !dockIsReachable()) {
-        state.mode = "loose";
-        state.vx = 0;
-        state.vy = 0;
-        state.angularVelocity = 0;
-        scheduleReturn();
-      }
     }
 
     requestFrame();

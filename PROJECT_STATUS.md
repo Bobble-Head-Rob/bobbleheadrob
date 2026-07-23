@@ -26,6 +26,7 @@ Interactive mascot prototype complete and ready for final manual and infrastruct
 - A brief personal note near the bottom of the homepage
 - A lightweight contact section linking to `rob@bobbleheadrob.com`
 - Pointer-aware, draggable hero mascot with capped fling physics, viewport collisions, impact response, and automatic return
+- Document-space home targeting that completes returns while the hero is offscreen and adapts to scrolling in progress
 - A two-body mascot model: viewport-level base physics plus independent two-axis head position, velocity, and angular state
 - Explicit head and base grab modes with direct targeting, preserved visual offsets, and part-specific trailing behavior
 - Attachment-derived spring bending, stretch, compression, and diagonal deformation with bounded displacement
@@ -43,6 +44,7 @@ Interactive mascot prototype complete and ready for final manual and infrastruct
 - Automated head- and base-driven directional, diagonal, reversal, off-center grab, flick, slow-release, paused-release, and pointer-cancel checks
 - Exact visual pointer deltas for both grab modes during positive and negative rotation with active scale deformation
 - Head-driven clamp, reversal, circular-motion, and release stability checks at simulated 60 Hz, 120 Hz, and uneven animation cadences
+- Automated above-viewport, below-viewport, mid-scroll, offscreen re-grab, visible-home, and reduced-motion return checks
 - Source-level JavaScript syntax, page-link, fragment-target, metadata, XML, and deployment-file-scope checks
 
 ### Independent and real-device validation outstanding
