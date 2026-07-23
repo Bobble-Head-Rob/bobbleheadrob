@@ -29,9 +29,9 @@ The layout is mobile-first. Project cards stack on small screens and become a tw
 
 ## Mascot behavior
 
-The mascot should feel observant and pleasantly physical, not frantic. Near-pointer eye tracking and head lean are restrained; fast approaches can produce a brief recoil. Dragging preserves the grab point, releases can carry momentum, impacts compress the character slightly, and the head and spring lag behind the base. Scroll reactions are strongest at the hero dock and deliberately reduced while the mascot is loose.
+The mascot should feel observant and pleasantly physical, not frantic. Near-pointer eye tracking and head lean are restrained; fast approaches can produce a brief recoil. The base is the primary dragged and thrown body. The head has independent two-axis spring motion, so it can trail, overshoot, and settle while the spring bends sideways or changes length. Dragging preserves the grab point, releases can carry momentum, and impacts deform the base while transferring inertia into the head. Scroll reactions are strongest at the hero dock and deliberately reduced while the mascot is loose.
 
-Slow overlapping idle rhythms replace a mechanical repeating nod. Shadow offset, small scale changes, and restrained parallax add depth without changing the established flat geometric construction. The rings, star, and plus stay anchored as part of the original composition.
+Slow overlapping idle forces replace a mechanical repeating nod. At the dock, the base stays planted while restrained lateral, vertical, and rotational head motion produces the bobble. Shadow offset and restrained parallax add depth without changing the established flat geometric construction. The rings, star, and plus stay anchored as part of the original composition.
 
 ## Accessibility
 

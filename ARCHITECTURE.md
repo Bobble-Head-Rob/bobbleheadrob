@@ -22,11 +22,13 @@ The page remains complete if JavaScript fails or is disabled. There are no runti
 
 The rings, star, and plus remain normal hero decorations. Only the `.bobble` character becomes interactive. It stays in the document flow while docked and switches to viewport-fixed positioning while dragged, thrown, or returning, preventing the interaction from reflowing the page.
 
-Pointer events provide one mouse, pen, and touch path with pointer capture and a preserved grab offset. Recent pointer samples produce a capped release velocity. A `requestAnimationFrame` loop integrates gravity, drag, angular momentum, restitution, collision insets, settling, and a damped magnetic return. Head, spring, base, eyes, shadow, and body transforms render independently from the body physics state.
+Pointer events provide one mouse, pen, and touch path with pointer capture and a preserved grab offset. Recent pointer samples produce a capped release velocity. A `requestAnimationFrame` loop integrates gravity, drag, angular momentum, restitution, collision insets, settling, and a damped magnetic return.
+
+The base owns that viewport-level body state. The head owns a separate local two-dimensional position and velocity plus angular state. Lateral and vertical damped spring forces pull it toward its rest point, while drag acceleration, release momentum, and collisions transfer bounded impulses into the local state. The spring's angle and length are derived from the base and head attachment points on every rendered frame, allowing sideways bend, stretch, compression, and diagonal deformation without layout reads in the animation loop. The base, head, spring, eyes, and shadow therefore render through separate transforms without competing for transform ownership.
 
 The loop throttles the docked idle animation, pauses on hidden tabs, and stops while a loose character is fully settled and waiting to return. When `IntersectionObserver` is supported, it also suspends the docked loop while the hero is outside the viewport; browsers without that API retain the throttled docked loop. Resize and orientation changes recalculate viewport bounds, and loose characters are clamped back into reach.
 
-Primary tuning values—gravity, drag, restitution, fling cap, head spring, and return spring—live together near the top of `public/mascot.js`. Current limitations are intentional: one active pointer at a time, no persisted mascot position, and return waits until the original hero dock is visible and reachable.
+Primary tuning values—including gravity, drag, restitution, fling cap, lateral and vertical head stiffness, head damping, maximum displacement, angular stiffness, idle impulse strength, and return spring—live together near the top of `public/mascot.js`. Current limitations are intentional: one active pointer at a time, no persisted mascot position, and return waits until the original hero dock is visible and reachable.
 
 This code is a homepage-specific interaction prototype. A future **Fling Pet** project should treat its game loop, progression, assets, and accessibility model as a separate product rather than expanding the landing-page module into a game.
 

@@ -220,28 +220,27 @@ h2 em {
   --body-x: 0px;
   --body-y: 0px;
   --body-rotation: 0deg;
-  --body-scale-x: 1;
-  --body-scale-y: 1;
   --head-x: 0px;
   --head-y: 0px;
   --head-rotation: 0deg;
-  --spring-lean: 0deg;
-  --spring-scale: 1;
-  --base-x: 0px;
+  --spring-angle: 0deg;
+  --spring-length: 3em;
   --base-y: 0px;
   --base-rotation: 0deg;
+  --base-scale-x: 1;
+  --base-scale-y: 1;
   --shadow-x: 0px;
   --shadow-y: 1.5em;
   --shadow-blur: 1.875em;
   position: relative;
-  display: grid;
-  justify-items: center;
+  display: block;
+  width: 8.5em;
+  height: 15em;
   cursor: grab;
   filter: drop-shadow(var(--shadow-x) var(--shadow-y) var(--shadow-blur) rgba(0, 0, 0, 0.35));
   touch-action: none;
   transform: translate3d(var(--body-x), var(--body-y), 0)
-    rotate(var(--body-rotation))
-    scale(var(--body-scale-x), var(--body-scale-y));
+    rotate(var(--body-rotation));
   transform-origin: 50% 85%;
   user-select: none;
   will-change: transform, filter;
@@ -260,6 +259,10 @@ h2 em {
 }
 
 .bobble-face {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 50%;
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -268,9 +271,10 @@ h2 em {
   border: 0.1875em solid var(--paper);
   border-radius: 48% 52% 46% 54%;
   background: var(--coral);
-  transform: translate3d(var(--head-x), var(--head-y), 0)
+  pointer-events: none;
+  transform: translate3d(calc(-50% + var(--head-x)), var(--head-y), 0)
     rotate(calc(-4deg + var(--head-rotation)));
-  transform-origin: 50% 82%;
+  transform-origin: 50% 100%;
   will-change: transform;
 }
 
@@ -284,15 +288,24 @@ h2 em {
 }
 
 .bobble-spring {
+  position: absolute;
+  z-index: 1;
+  top: calc(10.5em - var(--spring-length));
+  left: calc(50% - 0.8em);
   width: 1.6em;
-  height: 3em;
+  height: var(--spring-length);
   background: repeating-linear-gradient(175deg, transparent 0 0.3125em, var(--lime) 0.375em 0.5625em);
-  transform: rotate(var(--spring-lean)) scaleY(var(--spring-scale));
+  pointer-events: none;
+  transform: rotate(var(--spring-angle));
   transform-origin: 50% 100%;
   will-change: transform;
 }
 
 .bobble-base {
+  position: absolute;
+  z-index: 2;
+  bottom: 0;
+  left: 50%;
   display: grid;
   place-items: center;
   width: calc(8em / 1.7);
@@ -303,7 +316,11 @@ h2 em {
   font-size: 1.7em;
   font-weight: 950;
   letter-spacing: -0.08em;
-  transform: translate3d(var(--base-x), var(--base-y), 0) rotate(var(--base-rotation));
+  pointer-events: none;
+  transform: translate3d(-50%, var(--base-y), 0)
+    rotate(var(--base-rotation))
+    scale(var(--base-scale-x), var(--base-scale-y));
+  transform-origin: 50% 100%;
   will-change: transform;
 }
 

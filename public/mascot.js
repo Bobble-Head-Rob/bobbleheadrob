@@ -18,6 +18,9 @@
     dragOriginY: 0,
     dragPointerX: 0,
     dragPointerY: 0,
+    dragVelocityX: 0,
+    dragVelocityY: 0,
+    dragUpdatedAt: 0,
     x: 0,
     y: 0,
     vx: 0,
@@ -27,17 +30,20 @@
     squash: 0,
     transientScaleX: 0,
     transientScaleY: 0,
-    headX: 0,
-    headY: 0,
+    headOffsetX: 0,
+    headOffsetY: 0,
     headRotation: 0,
-    headVX: 0,
-    headVY: 0,
-    headVR: 0,
+    headVelocityX: 0,
+    headVelocityY: 0,
+    headAngularVelocity: 0,
     pointerX: -10000,
     pointerY: -10000,
     pointerSpeed: 0,
     pointerDistance: Infinity,
     pointerSeenAt: 0,
+    pointerInfluenceX: 0,
+    pointerInfluenceY: 0,
+    pointerStrength: 0,
     startleAt: 0,
     samples: [],
     scrollVelocity: 0,
@@ -62,8 +68,27 @@
     returnDelay: 2300,
     returnStiffness: 16,
     returnDamping: 6.2,
-    headStiffness: 42,
-    headDamping: 10
+    lateralSpringStiffness: 54,
+    verticalSpringStiffness: 68,
+    headDamping: 6.8,
+    maximumHeadDisplacement: 2.25,
+    angularStiffness: 38,
+    angularDamping: 7.5,
+    idleImpulseStrength: 8,
+    dragPositionCoupling: 0.82,
+    dragVelocityCoupling: 0.16,
+    bodyAccelerationCoupling: 0.62
+  };
+
+  const geometry = {
+    unit: 16,
+    bodyWidth: 136,
+    bodyHeight: 240,
+    springRestLength: 48,
+    maximumHeadDisplacement: 36,
+    maximumVerticalDisplacement: 27,
+    dockX: 0,
+    dockY: 0
   };
 
   const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
@@ -72,9 +97,62 @@
     return Number.isFinite(value) ? value : fallback;
   };
 
+  const updateDockTarget = () => {
+    const hostRect = mascot.closest(".hero-object").getBoundingClientRect();
+    geometry.dockX = hostRect.left + (hostRect.width - geometry.bodyWidth) / 2;
+    geometry.dockY = hostRect.top + (hostRect.height - geometry.bodyHeight) / 2;
+  };
+
+  const updateGeometry = () => {
+    geometry.unit = Number.parseFloat(getComputedStyle(mascot).fontSize) || 16;
+    geometry.bodyWidth = mascot.offsetWidth;
+    geometry.bodyHeight = mascot.offsetHeight;
+    geometry.springRestLength = geometry.unit * 3;
+    geometry.maximumHeadDisplacement = geometry.unit * tuning.maximumHeadDisplacement;
+    geometry.maximumVerticalDisplacement = geometry.maximumHeadDisplacement * 0.75;
+    updateDockTarget();
+  };
+
+  const toBaseLocal = (x, y) => {
+    const radians = state.rotation * Math.PI / 180;
+    const cosine = Math.cos(radians);
+    const sine = Math.sin(radians);
+
+    return {
+      x: x * cosine + y * sine,
+      y: -x * sine + y * cosine
+    };
+  };
+
+  const clampHeadState = () => {
+    const normalizedX = state.headOffsetX / geometry.maximumHeadDisplacement;
+    const normalizedY = state.headOffsetY / geometry.maximumVerticalDisplacement;
+    const magnitude = Math.hypot(normalizedX, normalizedY);
+
+    if (magnitude > 1) {
+      state.headOffsetX /= magnitude;
+      state.headOffsetY /= magnitude;
+      state.headVelocityX *= 0.55;
+      state.headVelocityY *= 0.55;
+    }
+
+    const maximumVelocity = geometry.unit * 32;
+    state.headVelocityX = clamp(state.headVelocityX, -maximumVelocity, maximumVelocity);
+    state.headVelocityY = clamp(state.headVelocityY, -maximumVelocity, maximumVelocity);
+  };
+
+  const applyBodyVelocityChange = (previousVX, previousVY) => {
+    const change = toBaseLocal(state.vx - previousVX, state.vy - previousVY);
+    const coupling = reducedMotion.matches ? 0.12 : tuning.bodyAccelerationCoupling;
+
+    state.headVelocityX -= change.x * coupling;
+    state.headVelocityY -= change.y * coupling;
+    clampHeadState();
+  };
+
   const dimensions = () => ({
-    width: mascot.offsetWidth,
-    height: mascot.offsetHeight
+    width: geometry.bodyWidth,
+    height: geometry.bodyHeight
   });
 
   const viewportBounds = () => {
@@ -90,13 +168,9 @@
   };
 
   const dockTarget = () => {
-    const host = mascot.closest(".hero-object");
-    const hostRect = host.getBoundingClientRect();
-    const { width, height } = dimensions();
-
     return {
-      x: hostRect.left + (hostRect.width - width) / 2,
-      y: hostRect.top + (hostRect.height - height) / 2
+      x: geometry.dockX,
+      y: geometry.dockY
     };
   };
 
@@ -133,6 +207,7 @@
 
     state.returnTimer = window.setTimeout(() => {
       state.returnTimer = 0;
+      updateDockTarget();
 
       if (state.mode !== "loose" || !dockIsReachable()) {
         scheduleReturn();
@@ -159,8 +234,8 @@
     const bodyX = numericProperty(styles, "--body-x", 0);
     const bodyY = numericProperty(styles, "--body-y", 0);
     const bodyRotation = numericProperty(styles, "--body-rotation", 0);
-    const bodyScaleX = numericProperty(styles, "--body-scale-x", 1);
-    const bodyScaleY = numericProperty(styles, "--body-scale-y", 1);
+    const baseScaleX = numericProperty(styles, "--base-scale-x", 1);
+    const baseScaleY = numericProperty(styles, "--base-scale-y", 1);
     const inlineTransform = mascot.style.transform;
 
     mascot.style.transform = "none";
@@ -170,8 +245,8 @@
     state.x = neutralRect.left + bodyX;
     state.y = neutralRect.top + bodyY;
     state.rotation = bodyRotation;
-    state.transientScaleX = bodyScaleX - 1;
-    state.transientScaleY = bodyScaleY - 1;
+    state.transientScaleX = baseScaleX - 1;
+    state.transientScaleY = baseScaleY - 1;
     mascot.classList.add("is-loose");
   };
 
@@ -190,8 +265,8 @@
       "--body-x": "0px",
       "--body-y": "0px",
       "--body-rotation": "0deg",
-      "--body-scale-x": "1",
-      "--body-scale-y": "1"
+      "--base-scale-x": "1",
+      "--base-scale-y": "1"
     });
     requestFrame();
   };
@@ -238,7 +313,15 @@
     const rect = face.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
-    state.pointerDistance = Math.hypot(event.clientX - centerX, event.clientY - centerY);
+    const pointerDX = event.clientX - centerX;
+    const pointerDY = event.clientY - centerY;
+    const radius = Math.max(170, Math.min(300, window.innerWidth * 0.28));
+    state.pointerDistance = Math.hypot(pointerDX, pointerDY);
+    state.pointerStrength = clamp(1 - state.pointerDistance / radius, 0, 1);
+    state.pointerInfluenceX =
+      clamp(pointerDX / radius, -1, 1) * state.pointerStrength;
+    state.pointerInfluenceY =
+      clamp(pointerDY / radius, -1, 1) * state.pointerStrength;
 
     const approaching = hadPointerSample && previousDistance - state.pointerDistance > 8;
     const mayStartle = now - state.startleAt > 850;
@@ -253,9 +336,10 @@
     ) {
       const awayX = clamp((centerX - event.clientX) / Math.max(state.pointerDistance, 1), -1, 1);
       const awayY = clamp((centerY - event.clientY) / Math.max(state.pointerDistance, 1), -1, 1);
-      state.headVX += awayX * 135;
-      state.headVY += awayY * 95 - 25;
-      state.headVR += awayX * 115;
+      state.headVelocityX += awayX * 135;
+      state.headVelocityY += awayY * 95 - 25;
+      state.headAngularVelocity += awayX * 115;
+      clampHeadState();
       state.startleAt = now;
     }
 
@@ -279,8 +363,8 @@
     }
 
     const styles = getComputedStyle(mascot);
-    const bodyScaleX = numericProperty(styles, "--body-scale-x", 1);
-    const bodyScaleY = numericProperty(styles, "--body-scale-y", 1);
+    const baseScaleX = numericProperty(styles, "--base-scale-x", 1);
+    const baseScaleY = numericProperty(styles, "--base-scale-y", 1);
 
     state.mode = "dragging";
     state.pointerId = event.pointerId;
@@ -288,12 +372,15 @@
     state.dragOriginY = state.y;
     state.dragPointerX = event.clientX;
     state.dragPointerY = event.clientY;
-    state.transientScaleX = bodyScaleX - 1;
-    state.transientScaleY = bodyScaleY - 1;
+    state.transientScaleX = baseScaleX - 1;
+    state.transientScaleY = baseScaleY - 1;
     state.squash = 0;
     state.vx = 0;
     state.vy = 0;
     state.angularVelocity = 0;
+    state.dragVelocityX = 0;
+    state.dragVelocityY = 0;
+    state.dragUpdatedAt = performance.now();
     state.samples = [];
     addSample(event);
     mascot.classList.add("is-dragging");
@@ -310,16 +397,37 @@
 
     event.preventDefault();
     const bounds = viewportBounds();
-    state.x = clamp(
+    const previousX = state.x;
+    const previousY = state.y;
+    const nextX = clamp(
       state.dragOriginX + event.clientX - state.dragPointerX,
       bounds.minX,
       bounds.maxX
     );
-    state.y = clamp(
+    const nextY = clamp(
       state.dragOriginY + event.clientY - state.dragPointerY,
       bounds.minY,
       bounds.maxY
     );
+    const movement = toBaseLocal(nextX - previousX, nextY - previousY);
+    const now = performance.now();
+    const elapsed = Math.max((now - state.dragUpdatedAt) / 1000, 0.008);
+    const velocityX = movement.x / elapsed;
+    const velocityY = movement.y / elapsed;
+    const motion = reducedMotion.matches ? 0.18 : 1;
+
+    state.x = nextX;
+    state.y = nextY;
+    state.headOffsetX -= movement.x * tuning.dragPositionCoupling * motion;
+    state.headOffsetY -= movement.y * tuning.dragPositionCoupling * motion;
+    state.headVelocityX -=
+      (velocityX - state.dragVelocityX) * tuning.dragVelocityCoupling * motion;
+    state.headVelocityY -=
+      (velocityY - state.dragVelocityY) * tuning.dragVelocityCoupling * motion;
+    state.dragVelocityX = velocityX;
+    state.dragVelocityY = velocityY;
+    state.dragUpdatedAt = now;
+    clampHeadState();
     addSample(event);
     requestFrame();
   };
@@ -334,11 +442,20 @@
     }
 
     const fling = cancelled ? { x: 0, y: 0 } : flingVelocity();
+    const nextVX = reducedMotion.matches ? 0 : fling.x;
+    const nextVY = reducedMotion.matches ? 0 : fling.y;
+    const localVelocity = toBaseLocal(nextVX, nextVY);
+    const releaseMotion = reducedMotion.matches ? 0.12 : tuning.dragVelocityCoupling;
+    state.headVelocityX -= (localVelocity.x - state.dragVelocityX) * releaseMotion;
+    state.headVelocityY -= (localVelocity.y - state.dragVelocityY) * releaseMotion;
     state.mode = "loose";
     state.pointerId = null;
-    state.vx = reducedMotion.matches ? 0 : fling.x;
-    state.vy = reducedMotion.matches ? 0 : fling.y;
+    state.vx = nextVX;
+    state.vy = nextVY;
     state.angularVelocity = reducedMotion.matches ? 0 : clamp(fling.x * 0.075, -120, 120);
+    state.dragVelocityX = 0;
+    state.dragVelocityY = 0;
+    clampHeadState();
     mascot.classList.remove("is-dragging");
 
     if (mascot.hasPointerCapture(event.pointerId)) {
@@ -382,18 +499,21 @@
 
     if (impact > 80 && !reducedMotion.matches) {
       state.squash = clamp(impact / 1800, 0.045, 0.22);
-      state.headVY -= clamp(impact * 0.13, 10, 105);
-      state.headVR += clamp(state.vx * 0.025, -35, 35);
+      state.headAngularVelocity += clamp(state.vx * 0.025, -35, 35);
     }
   };
 
   const integrateLooseBody = (dt) => {
+    const previousVX = state.vx;
+    const previousVY = state.vy;
+
     if (state.mode === "returning") {
       if (!dockIsReachable()) {
         state.mode = "loose";
         state.vx = 0;
         state.vy = 0;
         state.angularVelocity = 0;
+        applyBodyVelocityChange(previousVX, previousVY);
         scheduleReturn();
         return;
       }
@@ -415,9 +535,12 @@
       const speed = Math.hypot(state.vx, state.vy);
 
       if (state.returnAge > 0.5 && distance < 0.8 && speed < 8) {
+        applyBodyVelocityChange(previousVX, previousVY);
         returnToDock();
+        return;
       }
 
+      applyBodyVelocityChange(previousVX, previousVY);
       return;
     }
 
@@ -459,82 +582,100 @@
         scheduleReturn();
       }
     }
+
+    applyBodyVelocityChange(previousVX, previousVY);
   };
 
   const pointerTargets = () => {
-    const rect = face.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const radius = Math.max(170, Math.min(300, window.innerWidth * 0.28));
-    const dx = state.pointerX - centerX;
-    const dy = state.pointerY - centerY;
-    const distance = Math.hypot(dx, dy);
-    const strength = clamp(1 - distance / radius, 0, 1);
-
     return {
-      x: clamp(dx / radius, -1, 1) * strength,
-      y: clamp(dy / radius, -1, 1) * strength,
-      strength
+      x: state.pointerInfluenceX,
+      y: state.pointerInfluenceY,
+      strength: state.pointerStrength
     };
   };
 
   const integrateHead = (dt, now) => {
+    if (
+      state.mode === "dragging" &&
+      state.dragUpdatedAt &&
+      now - state.dragUpdatedAt > 48 &&
+      (state.dragVelocityX || state.dragVelocityY)
+    ) {
+      const coupling = reducedMotion.matches ? 0.08 : tuning.dragVelocityCoupling;
+      state.headVelocityX += state.dragVelocityX * coupling;
+      state.headVelocityY += state.dragVelocityY * coupling;
+      state.dragVelocityX = 0;
+      state.dragVelocityY = 0;
+    }
+
     const pointer = pointerTargets();
     const looseInfluence = state.mode === "docked" ? 1 : 0.35;
     const scrollInfluence = state.mode === "docked" ? 1 : 0.18;
     const scroll = clamp(state.scrollVelocity / 1400, -1, 1) * scrollInfluence;
-    const motion = reducedMotion.matches ? 0.22 : 1;
-    const idle = state.mode === "docked" && !reducedMotion.matches
-      ? Math.sin(now * 0.00072 + state.idleSeed) * 1.4 +
-        Math.sin(now * 0.00113 + state.idleSeed * 0.7) * 0.65
+    const motion = reducedMotion.matches ? 0.16 : 1;
+    const dockedIdle = state.mode === "docked" && !reducedMotion.matches;
+    const idleForceX = dockedIdle
+      ? (
+          Math.sin(now * 0.00073 + state.idleSeed) +
+          Math.sin(now * 0.00119 + state.idleSeed * 0.61) * 0.47
+        ) * tuning.idleImpulseStrength * geometry.unit
       : 0;
-    const targetX =
-      pointer.x * 5.5 * looseInfluence * motion -
-      clamp(state.vx / 420, -5, 5) * motion +
-      idle * 0.25;
+    const idleForceY = dockedIdle
+      ? (
+          Math.sin(now * 0.00091 + state.idleSeed * 1.27) +
+          Math.sin(now * 0.00143 + state.idleSeed * 0.42) * 0.35
+        ) * tuning.idleImpulseStrength * geometry.unit * 0.52
+      : 0;
+    const targetX = pointer.x * geometry.unit * 0.32 * looseInfluence * motion;
     const targetY =
-      pointer.y * 2.8 * looseInfluence * motion +
-      clamp(state.vy / 700, -3, 4) * motion +
-      scroll * 4.5;
+      pointer.y * geometry.unit * 0.16 * looseInfluence * motion +
+      scroll * geometry.unit * 0.22 * motion;
     const targetRotation =
-      pointer.x * 4.5 * looseInfluence * motion -
-      clamp(state.vx / 180, -7, 7) * motion -
+      pointer.x * 4.5 * looseInfluence * motion +
+      state.headOffsetX / geometry.maximumHeadDisplacement * 7 * motion -
       scroll * 4 +
-      idle;
+      (dockedIdle ? Math.sin(now * 0.00067 + state.idleSeed * 0.9) * 1.1 : 0);
 
-    state.headVX += (targetX - state.headX) * tuning.headStiffness * dt;
-    state.headVY += (targetY - state.headY) * tuning.headStiffness * dt;
-    state.headVR += (targetRotation - state.headRotation) * tuning.headStiffness * dt;
+    const accelerationX =
+      (targetX - state.headOffsetX) * tuning.lateralSpringStiffness -
+      state.headVelocityX * tuning.headDamping +
+      idleForceX;
+    const accelerationY =
+      (targetY - state.headOffsetY) * tuning.verticalSpringStiffness -
+      state.headVelocityY * tuning.headDamping +
+      idleForceY;
+    const angularAcceleration =
+      (targetRotation - state.headRotation) * tuning.angularStiffness -
+      state.headAngularVelocity * tuning.angularDamping;
 
-    const damping = Math.exp(-tuning.headDamping * dt);
-    state.headVX *= damping;
-    state.headVY *= damping;
-    state.headVR *= damping;
-    state.headX += state.headVX * dt;
-    state.headY += state.headVY * dt;
-    state.headRotation += state.headVR * dt;
+    state.headVelocityX += accelerationX * dt;
+    state.headVelocityY += accelerationY * dt;
+    state.headAngularVelocity += angularAcceleration * dt;
+    state.headOffsetX += state.headVelocityX * dt;
+    state.headOffsetY += state.headVelocityY * dt;
+    state.headRotation += state.headAngularVelocity * dt;
+    clampHeadState();
 
     return pointer;
   };
 
   const render = (now, pointer, dt) => {
     const docked = state.mode === "docked";
-    const idleX = docked && !reducedMotion.matches
-      ? Math.sin(now * 0.00049 + state.idleSeed) * 1.2
-      : 0;
-    const idleY = docked && !reducedMotion.matches
-      ? Math.sin(now * 0.00077 + state.idleSeed * 1.3) * -2.1
-      : 0;
-    const idleRotation = docked && !reducedMotion.matches
-      ? Math.sin(now * 0.00061 + state.idleSeed) * 1.25
-      : 0;
-    const bodyX = docked ? idleX + pointer.x * 1.6 : state.x;
-    const bodyY = docked ? idleY + pointer.y * 0.8 : state.y;
-    const bodyRotation = docked ? idleRotation + pointer.x * 1.4 : state.rotation;
+    const bodyX = docked ? 0 : state.x;
+    const bodyY = docked ? 0 : state.y;
+    const bodyRotation = docked ? 0 : state.rotation;
     const verticalSpeed = clamp(Math.abs(state.vy) / 1800, 0, 0.07);
     const squash = reducedMotion.matches ? 0 : state.squash;
-    const scaleX = 1 + squash - verticalSpeed * 0.35 + state.transientScaleX;
-    const scaleY = 1 - squash + verticalSpeed + state.transientScaleY;
+    const baseScaleX = 1 + squash - verticalSpeed * 0.35 + state.transientScaleX;
+    const baseScaleY = 1 - squash + verticalSpeed + state.transientScaleY;
+    const springDX = state.headOffsetX;
+    const springDY = state.headOffsetY - geometry.springRestLength;
+    const springLength = clamp(
+      Math.hypot(springDX, springDY),
+      geometry.springRestLength * 0.55,
+      geometry.springRestLength * 1.55
+    );
+    const springAngle = Math.atan2(springDX, -springDY) * 180 / Math.PI;
     const eyeX = pointer.x * 3.2;
     const eyeY = pointer.y * 2.4;
     const speedLift = docked ? 0 : clamp((window.innerHeight - state.y) / window.innerHeight, 0, 1);
@@ -543,16 +684,15 @@
       "--body-x": `${bodyX.toFixed(2)}px`,
       "--body-y": `${bodyY.toFixed(2)}px`,
       "--body-rotation": `${bodyRotation.toFixed(2)}deg`,
-      "--body-scale-x": scaleX.toFixed(4),
-      "--body-scale-y": scaleY.toFixed(4),
-      "--head-x": `${state.headX.toFixed(2)}px`,
-      "--head-y": `${state.headY.toFixed(2)}px`,
+      "--head-x": `${state.headOffsetX.toFixed(2)}px`,
+      "--head-y": `${state.headOffsetY.toFixed(2)}px`,
       "--head-rotation": `${state.headRotation.toFixed(2)}deg`,
-      "--spring-lean": `${(state.headRotation * 0.52).toFixed(2)}deg`,
-      "--spring-scale": clamp(1 + state.headY * 0.012 - verticalSpeed * 0.35, 0.82, 1.16).toFixed(3),
-      "--base-x": `${(-state.headX * 0.09).toFixed(2)}px`,
-      "--base-y": `${(squash * 5).toFixed(2)}px`,
-      "--base-rotation": `${(-state.headRotation * 0.08).toFixed(2)}deg`,
+      "--spring-angle": `${springAngle.toFixed(2)}deg`,
+      "--spring-length": `${springLength.toFixed(2)}px`,
+      "--base-y": `${(squash * geometry.unit * 0.3).toFixed(2)}px`,
+      "--base-rotation": "0deg",
+      "--base-scale-x": baseScaleX.toFixed(4),
+      "--base-scale-y": baseScaleY.toFixed(4),
       "--shadow-x": `${clamp(state.vx * -0.008, -12, 12).toFixed(2)}px`,
       "--shadow-y": `${(12 + speedLift * 12).toFixed(2)}px`,
       "--shadow-blur": `${(18 + speedLift * 14).toFixed(2)}px`,
@@ -597,7 +737,12 @@
       (Math.abs(state.vx) > 0.1 ||
         Math.abs(state.vy) > 0.1 ||
         Math.abs(state.angularVelocity) > 0.1 ||
-        state.squash > 0.001);
+        state.squash > 0.001 ||
+        Math.abs(state.headOffsetX) > 0.05 ||
+        Math.abs(state.headOffsetY) > 0.05 ||
+        Math.abs(state.headVelocityX) > 0.1 ||
+        Math.abs(state.headVelocityY) > 0.1 ||
+        Math.abs(state.headAngularVelocity) > 0.1);
 
     if (state.mode !== "loose" || looseStillMoving || !state.returnTimer) {
       requestFrame();
@@ -611,10 +756,14 @@
     state.scrollVelocity = clamp((nextY - state.lastScrollY) / elapsed, -2400, 2400);
     state.lastScrollY = nextY;
     state.lastScrollAt = now;
+    updateDockTarget();
     requestFrame();
   };
 
   const onResize = () => {
+    updateGeometry();
+    clampHeadState();
+
     if (state.mode !== "docked") {
       const bounds = viewportBounds();
       state.x = clamp(state.x, bounds.minX, bounds.maxX);
@@ -675,5 +824,6 @@
     hostObserver.observe(mascot.closest(".hero-object"));
   }
 
+  updateGeometry();
   requestFrame();
 })();

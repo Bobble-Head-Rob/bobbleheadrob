@@ -26,7 +26,9 @@ Interactive mascot prototype complete and ready for final manual and infrastruct
 - A brief personal note near the bottom of the homepage
 - A lightweight contact section linking to `rob@bobbleheadrob.com`
 - Pointer-aware, draggable hero mascot with capped fling physics, viewport collisions, impact response, and automatic return
-- Separate head, spring, eye, base, shadow, and body motion with scroll awareness and an organic docked idle
+- A two-body mascot model: viewport-level base physics plus independent two-axis head position, velocity, and angular state
+- Attachment-derived spring bending, stretch, compression, and diagonal deformation with bounded displacement
+- A planted docked base with restrained head-led idle motion, scroll awareness, and cursor reactions
 - Reduced-motion behavior that preserves eye tracking and direct dragging while suppressing fling and sustained motion
 - Visibility, resize, orientation, and offscreen safeguards that reduce work and keep a loose mascot reachable
 
@@ -35,6 +37,8 @@ Interactive mascot prototype complete and ready for final manual and infrastruct
 - Automated headless-browser checks at 1440px, 768px, 390px, and 320px with no horizontal overflow
 - Mouse-event fling plus synthetic touch-event drag, collision reachability, settle-and-return, and return cancellation
 - Automated resize-while-loose, docked scroll reaction, eye tracking, reduced-motion, and transformed re-grab checks
+- Automated slow and rapid horizontal drag, two-axis and diagonal drag, direction reversal, release overshoot, four-edge collision, automatic return, and docked-idle checks
+- Exact transformed re-grabs in both rotation directions while base scale deformation was active
 - Source-level JavaScript syntax, page-link, fragment-target, metadata, XML, and deployment-file-scope checks
 
 ### Independent and real-device validation outstanding
@@ -44,7 +48,7 @@ Interactive mascot prototype complete and ready for final manual and infrastruct
 - Manual keyboard-only navigation and operating-system reduced-motion review
 - Subjective tuning review for startle intensity, hard impacts, and return timing
 
-The current physics tuning is intentionally conservative. Real-device follow-up should focus on touch release feel, high-refresh displays, and whether the return delay feels patient rather than slow. The homepage mascot remains separate from the future **Fling Pet** project, which would require its own product and accessibility decisions.
+The current physics tuning is intentionally conservative. Real-device follow-up should focus on touch release feel, whether the head lag remains balanced during very slow and very fast gestures, high-refresh displays, and whether the return delay feels patient rather than slow. The homepage mascot remains separate from the future **Fling Pet** project, which would require its own product and accessibility decisions.
 
 ## Release constraints
 
