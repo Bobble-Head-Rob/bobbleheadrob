@@ -60,6 +60,7 @@
     returnAge: 0,
     animationFrame: 0,
     idleSeed: Math.random() * Math.PI * 2,
+    idlePulseAt: performance.now() + 2800 + Math.random() * 3000,
     hidden: document.hidden,
     hostVisible: true
   };
@@ -76,14 +77,19 @@
     returnDamping: 6.2,
     lateralSpringStiffness: 54,
     verticalSpringStiffness: 68,
-    headDamping: 6.8,
-    maximumHeadDisplacement: 2.25,
+    headDamping: 6.3,
+    maximumHeadDisplacement: 2.6,
     angularStiffness: 38,
-    angularDamping: 7.5,
-    idleImpulseStrength: 8,
-    dragPositionCoupling: 0.82,
-    dragVelocityCoupling: 0.16,
-    bodyAccelerationCoupling: 0.62,
+    angularDamping: 7,
+    idleImpulseStrength: 10.2,
+    idleVerticalForceScale: 0.61,
+    idleRotationAmplitude: 1.35,
+    idlePulseLateralVelocity: 44,
+    idlePulseVerticalVelocity: 24,
+    idlePulseAngularVelocity: 32,
+    dragPositionCoupling: 0.96,
+    dragVelocityCoupling: 0.19,
+    bodyAccelerationCoupling: 0.74,
     headGrabBaseStiffness: 44,
     headGrabBaseDamping: 13.5,
     headGrabMaximumAcceleration: 5200,
@@ -643,8 +649,8 @@
     }
 
     if (impact > 80 && !reducedMotion.matches) {
-      state.squash = clamp(impact / 1800, 0.045, 0.22);
-      state.headAngularVelocity += clamp(state.vx * 0.025, -35, 35);
+      state.squash = clamp(impact / 1560, 0.05, 0.245);
+      state.headAngularVelocity += clamp(state.vx * 0.03, -42, 42);
     }
   };
 
@@ -846,17 +852,32 @@
     const scroll = clamp(state.scrollVelocity / 1400, -1, 1) * scrollInfluence;
     const motion = reducedMotion.matches ? 0.16 : 1;
     const dockedIdle = state.mode === "docked" && !reducedMotion.matches;
+
+    if (dockedIdle && now >= state.idlePulseAt) {
+      const direction = Math.sin(now * 0.0017 + state.idleSeed) >= 0 ? 1 : -1;
+      const emphasis = 0.84 + Math.random() * 0.32;
+
+      state.headVelocityX += direction * tuning.idlePulseLateralVelocity * emphasis;
+      state.headVelocityY -=
+        tuning.idlePulseVerticalVelocity * (0.8 + Math.random() * 0.4);
+      state.headAngularVelocity +=
+        direction * tuning.idlePulseAngularVelocity * emphasis;
+      state.idlePulseAt = now + 2800 + Math.random() * 3000;
+    }
+
     const idleForceX = dockedIdle
       ? (
           Math.sin(now * 0.00073 + state.idleSeed) +
-          Math.sin(now * 0.00119 + state.idleSeed * 0.61) * 0.47
+          Math.sin(now * 0.00119 + state.idleSeed * 0.61) * 0.47 +
+          Math.sin(now * 0.00031 + state.idleSeed * 1.83) * 0.22
         ) * tuning.idleImpulseStrength * geometry.unit
       : 0;
     const idleForceY = dockedIdle
       ? (
           Math.sin(now * 0.00091 + state.idleSeed * 1.27) +
-          Math.sin(now * 0.00143 + state.idleSeed * 0.42) * 0.35
-        ) * tuning.idleImpulseStrength * geometry.unit * 0.52
+          Math.sin(now * 0.00143 + state.idleSeed * 0.42) * 0.35 +
+          Math.sin(now * 0.00047 + state.idleSeed * 1.61) * 0.18
+        ) * tuning.idleImpulseStrength * geometry.unit * tuning.idleVerticalForceScale
       : 0;
     const targetX = pointer.x * geometry.unit * 0.32 * looseInfluence * motion;
     const targetY =
@@ -866,7 +887,14 @@
       pointer.x * 4.5 * looseInfluence * motion +
       state.headOffsetX / geometry.maximumHeadDisplacement * 7 * motion -
       scroll * 4 +
-      (dockedIdle ? Math.sin(now * 0.00067 + state.idleSeed * 0.9) * 1.1 : 0);
+      (
+        dockedIdle
+          ? (
+              Math.sin(now * 0.00067 + state.idleSeed * 0.9) +
+              Math.sin(now * 0.00107 + state.idleSeed * 1.37) * 0.24
+            ) * tuning.idleRotationAmplitude
+          : 0
+      );
 
     const accelerationX =
       (targetX - state.headOffsetX) * tuning.lateralSpringStiffness -
@@ -932,7 +960,7 @@
       "--eye-y": `${eyeY.toFixed(2)}px`
     });
 
-    state.squash *= Math.exp(-8 * dt);
+    state.squash *= Math.exp(-7.4 * dt);
 
     if (state.mode !== "dragging") {
       state.transientScaleX *= Math.exp(-8 * dt);

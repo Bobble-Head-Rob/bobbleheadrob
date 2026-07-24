@@ -30,7 +30,7 @@ Interactive mascot prototype complete and ready for final manual and infrastruct
 - A two-body mascot model: viewport-level base physics plus independent two-axis head position, velocity, and angular state
 - Explicit head and base grab modes with direct targeting, preserved visual offsets, and part-specific trailing behavior
 - Attachment-derived spring bending, stretch, compression, and diagonal deformation with bounded displacement
-- A planted docked base with restrained head-led idle motion, scroll awareness, and cursor reactions
+- A planted docked base with varied head-led idle motion, occasional stronger bobbles, scroll awareness, and cursor reactions
 - Reduced-motion behavior that preserves eye tracking and direct dragging while suppressing fling and sustained motion
 - Visibility, resize, orientation, and offscreen safeguards that reduce work and keep a loose mascot reachable
 
@@ -54,7 +54,7 @@ Interactive mascot prototype complete and ready for final manual and infrastruct
 - Manual keyboard-only navigation and operating-system reduced-motion review
 - Subjective tuning review for startle intensity, hard impacts, and return timing
 
-The current physics tuning is intentionally conservative. Real-device follow-up should focus on touch release feel, whether the head lag remains balanced during very slow and very fast gestures, high-refresh displays, and whether the return delay feels patient rather than slow. The homepage mascot remains separate from the future **Fling Pet** project, which would require its own product and accessibility decisions.
+The current physics tuning gives secondary head motion more personality while keeping the base trajectory and interaction controls conservative. Real-device follow-up should focus on touch release feel, whether the stronger head lag remains balanced during very slow and very fast gestures, high-refresh displays, and whether the return delay feels patient rather than slow. The homepage mascot remains separate from the future **Fling Pet** project, which would require its own product and accessibility decisions.
 
 ## Release constraints
 
