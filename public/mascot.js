@@ -63,6 +63,8 @@
     pointerStrength: 0,
     startleAt: 0,
     samples: [],
+    pointerType: "mouse",
+    releaseIntentScale: 0,
     scrollVelocity: 0,
     dockedScrollVelocity: 0,
     dockedScrollActiveUntil: 0,
@@ -116,6 +118,17 @@
     contactTorqueThreshold: 40,
     collisionBounceThreshold: 90,
     maxFling: 1900,
+    flingHistoryWindow: 150,
+    flingReleaseGrace: 50,
+    flingSampleMinimumDistance: 0.75,
+    flingMinimumSpeed: 35,
+    flingShortWindow: 45,
+    flingMediumWindow: 85,
+    flingLongWindow: 135,
+    flingAverageWeight: 0.7,
+    flingPeakWeight: 0.3,
+    flingPeakRatio: 1.35,
+    mouseFlingMultiplier: 1.12,
     returnDelay: 2300,
     returnStiffness: 16,
     returnDamping: 6.2,
@@ -710,23 +723,210 @@
     requestFrame();
   };
 
-  const addSample = (event) => {
-    const now = performance.now();
-    state.samples.push({ x: event.clientX, y: event.clientY, time: now });
-    state.samples = state.samples.filter((sample) => now - sample.time <= 130).slice(-7);
-  };
-
-  const flingVelocity = () => {
-    if (state.samples.length < 2) {
-      return { x: 0, y: 0 };
+  const addSample = (event, force = false, now = performance.now()) => {
+    if (
+      !Number.isFinite(event.clientX) ||
+      !Number.isFinite(event.clientY) ||
+      !Number.isFinite(now)
+    ) {
+      return;
     }
 
-    const first = state.samples[0];
     const last = state.samples[state.samples.length - 1];
-    const elapsed = Math.max((last.time - first.time) / 1000, 0.016);
-    let x = (last.x - first.x) / elapsed;
-    let y = (last.y - first.y) / elapsed;
+    const distance = last
+      ? Math.hypot(event.clientX - last.x, event.clientY - last.y)
+      : Infinity;
+
+    if (force || distance >= tuning.flingSampleMinimumDistance) {
+      state.samples.push({ x: event.clientX, y: event.clientY, time: now });
+    }
+
+    state.samples = state.samples
+      .filter((sample) => now - sample.time <= tuning.flingHistoryWindow)
+      .slice(-18);
+  };
+
+  const velocityBetween = (first, last) => {
+    const elapsed = (last.time - first.time) / 1000;
+
+    if (elapsed < 0.012) {
+      return null;
+    }
+
+    const x = (last.x - first.x) / elapsed;
+    const y = (last.y - first.y) / elapsed;
+    return { x, y, speed: Math.hypot(x, y) };
+  };
+
+  const estimateFlingVelocity = (samples, releaseAt, pointerType) => {
+    const cleanSamples = [];
+
+    samples.forEach((sample) => {
+      if (
+        !Number.isFinite(sample.x) ||
+        !Number.isFinite(sample.y) ||
+        !Number.isFinite(sample.time) ||
+        releaseAt - sample.time > tuning.flingHistoryWindow
+      ) {
+        return;
+      }
+
+      const previous = cleanSamples[cleanSamples.length - 1];
+      if (
+        previous &&
+        Math.hypot(sample.x - previous.x, sample.y - previous.y) <
+          tuning.flingSampleMinimumDistance
+      ) {
+        return;
+      }
+
+      cleanSamples.push(sample);
+    });
+
+    if (cleanSamples.length < 2) {
+      return { x: 0, y: 0, intentScale: 0 };
+    }
+
+    const last = cleanSamples[cleanSamples.length - 1];
+    const releaseAge = Math.max(releaseAt - last.time, 0);
+    const graceProgress = clamp(
+      1 -
+        (releaseAge - tuning.flingReleaseGrace) /
+          (tuning.flingHistoryWindow - tuning.flingReleaseGrace),
+      0,
+      1
+    );
+    const intentScale =
+      releaseAge <= tuning.flingReleaseGrace
+        ? 1
+        : graceProgress * graceProgress;
+    const windows = [
+      { duration: tuning.flingShortWindow, weight: 0.5 },
+      { duration: tuning.flingMediumWindow, weight: 0.32 },
+      { duration: tuning.flingLongWindow, weight: 0.18 }
+    ];
+    const candidates = [];
+
+    windows.forEach(({ duration, weight }) => {
+      const cutoff = last.time - duration;
+      let first = cleanSamples[0];
+
+      for (let index = cleanSamples.length - 2; index >= 0; index -= 1) {
+        first = cleanSamples[index];
+        if (first.time <= cutoff) {
+          break;
+        }
+      }
+
+      const velocity = velocityBetween(first, last);
+      if (velocity) {
+        candidates.push({ ...velocity, weight });
+      }
+    });
+
+    if (!candidates.length || intentScale <= 0) {
+      return { x: 0, y: 0, intentScale: 0 };
+    }
+
+    const directionVelocity = candidates[0];
+    if (directionVelocity.speed < tuning.flingMinimumSpeed) {
+      return { x: 0, y: 0, intentScale };
+    }
+
+    const directionX = directionVelocity.x / directionVelocity.speed;
+    const directionY = directionVelocity.y / directionVelocity.speed;
+    let averageX = 0;
+    let averageY = 0;
+    let averageWeight = 0;
+
+    candidates.forEach((candidate) => {
+      const coherence =
+        candidate.speed > 0
+          ? (candidate.x * directionX + candidate.y * directionY) /
+            candidate.speed
+          : 0;
+
+      if (coherence <= 0.35) {
+        return;
+      }
+
+      const weight = candidate.weight * coherence;
+      averageX += candidate.x * weight;
+      averageY += candidate.y * weight;
+      averageWeight += weight;
+    });
+
+    if (!averageWeight) {
+      return { x: 0, y: 0, intentScale };
+    }
+
+    averageX /= averageWeight;
+    averageY /= averageWeight;
+    const averageSpeed = Math.hypot(averageX, averageY);
+    let peak = { x: averageX, y: averageY, speed: averageSpeed };
+
+    for (let lastIndex = 1; lastIndex < cleanSamples.length; lastIndex += 1) {
+      for (let firstIndex = 0; firstIndex < lastIndex; firstIndex += 1) {
+        const elapsed =
+          cleanSamples[lastIndex].time - cleanSamples[firstIndex].time;
+        if (
+          elapsed < 24 ||
+          elapsed > 65 ||
+          last.time - cleanSamples[lastIndex].time > 95
+        ) {
+          continue;
+        }
+
+        const velocity = velocityBetween(
+          cleanSamples[firstIndex],
+          cleanSamples[lastIndex]
+        );
+        if (!velocity || velocity.speed <= peak.speed) {
+          continue;
+        }
+
+        const coherence =
+          (velocity.x * directionX + velocity.y * directionY) / velocity.speed;
+        if (coherence > 0.55) {
+          peak = velocity;
+        }
+      }
+    }
+
+    const peakLimit = Math.max(
+      averageSpeed * tuning.flingPeakRatio,
+      directionVelocity.speed * 1.15
+    );
+    if (peak.speed > peakLimit) {
+      const peakScale = peakLimit / peak.speed;
+      peak = {
+        x: peak.x * peakScale,
+        y: peak.y * peakScale,
+        speed: peakLimit
+      };
+    }
+
+    const pointerMultiplier =
+      pointerType === "mouse" ? tuning.mouseFlingMultiplier : 1;
+    let x =
+      (
+        averageX * tuning.flingAverageWeight +
+        peak.x * tuning.flingPeakWeight
+      ) *
+      intentScale *
+      pointerMultiplier;
+    let y =
+      (
+        averageY * tuning.flingAverageWeight +
+        peak.y * tuning.flingPeakWeight
+      ) *
+      intentScale *
+      pointerMultiplier;
     const speed = Math.hypot(x, y);
+
+    if (speed < tuning.flingMinimumSpeed) {
+      return { x: 0, y: 0, intentScale };
+    }
 
     if (speed > tuning.maxFling) {
       const scale = tuning.maxFling / speed;
@@ -734,7 +934,17 @@
       y *= scale;
     }
 
-    return { x, y };
+    return { x, y, intentScale };
+  };
+
+  const flingVelocity = (releaseAt) => {
+    const fling = estimateFlingVelocity(
+      state.samples,
+      releaseAt,
+      state.pointerType
+    );
+    state.releaseIntentScale = fling.intentScale;
+    return { x: fling.x, y: fling.y };
   };
 
   const curvedReleaseVelocity = () => {
@@ -797,7 +1007,7 @@
       ) /
       radiusSquared *
       radiansToDegrees;
-    const curvedVelocity = curvedReleaseVelocity();
+    const curvedVelocity = curvedReleaseVelocity() * state.releaseIntentScale;
 
     return clamp(
       (
@@ -916,6 +1126,8 @@
     state.mode = "dragging";
     state.grabMode = grabMode;
     state.pointerId = event.pointerId;
+    state.pointerType = event.pointerType || "mouse";
+    state.releaseIntentScale = 0;
     state.dragOriginX = state.x;
     state.dragOriginY = state.y;
     state.dragPointerX = event.clientX;
@@ -941,7 +1153,7 @@
     state.headAnchorX = headAnchor.x;
     state.headAnchorY = headAnchor.y;
     state.samples = [];
-    addSample(event);
+    addSample(event, true);
     mascot.classList.add("is-dragging");
     mascot.setPointerCapture(event.pointerId);
     requestFrame();
@@ -1034,11 +1246,14 @@
       return;
     }
 
+    const releaseAt = performance.now();
+
     if (!cancelled) {
-      addSample(event);
+      addSample(event, false, releaseAt);
     }
 
-    const fling = cancelled ? { x: 0, y: 0 } : flingVelocity();
+    state.releaseIntentScale = 0;
+    const fling = cancelled ? { x: 0, y: 0 } : flingVelocity(releaseAt);
     let nextVX = 0;
     let nextVY = 0;
 

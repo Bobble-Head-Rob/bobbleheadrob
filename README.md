@@ -21,7 +21,7 @@ Opening `public/index.html` directly will display the page, but a local server i
 The hero bobblehead is an optional interactive flourish:
 
 - Move a mouse or trackpad pointer near the face to get a small eye and head reaction.
-- Drag the head or base directly with a mouse, pen, or touch, then release it gently or fling it.
+- Drag the head or base directly with a mouse, pen, or touch, then release it gently or fling it; a short release grace preserves a decisive flick, while pausing before release produces a drop.
 - When the base is grabbed, the independently sprung head trails; when the head is grabbed, the base trails beneath it.
 - A loose mascot can tumble through complete rotations, gain spin from off-center throws and impacts, roll or settle upright or sideways, and return to its hero position even when the hero is offscreen.
 - Reduced-motion mode keeps eye tracking and direct dragging while suppressing fling and sustained idle motion.

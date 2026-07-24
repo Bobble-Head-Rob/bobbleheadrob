@@ -1,6 +1,6 @@
 # Project Status
 
-Last reviewed: 2026-07-23
+Last reviewed: 2026-07-24
 
 ## Current release
 
@@ -26,6 +26,7 @@ Interactive mascot prototype complete and ready for final manual and infrastruct
 - A brief personal note near the bottom of the homepage
 - A lightweight contact section linking to `rob@bobbleheadrob.com`
 - Pointer-aware, draggable hero mascot with capped fling physics, viewport collisions, impact response, and automatic return
+- Multi-window release-intent estimation with duplicate filtering, a short release grace, bounded mouse calibration, and deliberate-pause drop behavior
 - Unrestricted loose-state whole-body rotation with leverage- and curvature-derived fling spin, contact-derived collision torque, floor rolling, and angular friction
 - Orientation-aware collision extents and settling that permit upright or either-side rest while tipping unstable inverted head balances consistently
 - Document-space home targeting that completes returns while the hero is offscreen and adapts to scrolling in progress
@@ -56,11 +57,13 @@ Interactive mascot prototype complete and ready for final manual and infrastruct
 - High-energy browser and fixed-step stress checks for head, spring, and base edge contact, repeated tumbling, torque direction, multi-turn stability, and less than 0.11px residual proxy penetration
 - Automated hint timing, sequence completion, offscreen gating, interaction suppression, session persistence, responsive placement, and accessibility-source checks
 - Source-level JavaScript syntax, page-link, fragment-target, metadata, XML, and deployment-file-scope checks
+- Recorded-gesture release comparisons plus ten automated short mouse-style flicks and ten longer mouse-style throws in a visible local browser
 
 ### Independent and real-device validation outstanding
 
 - Independent visual and interaction review in ordinary desktop and mobile browsers
 - Physical touch-device testing on representative iOS and Android hardware
+- Rob's final physical-mouse approval of short flick reliability, button-release grace, gentle placement, and head-versus-base throw feel
 - Rob's final physical mouse-wheel, trackpad, and mobile scrolling approval of docked scroll strength, rebound feel, and post-scroll idle resumption
 - Rob's final physical-device approval of high-energy spin, glancing-impact torque, rolling weight, inverted tipping, and upright-versus-sideways settling feel
 - Manual keyboard-only navigation and operating-system reduced-motion review
