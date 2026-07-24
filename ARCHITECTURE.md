@@ -16,7 +16,7 @@ BobbleheadRob is a dependency-free static website. A browser requests HTML, CSS,
 
 ## Runtime model
 
-The page remains complete if JavaScript fails or is disabled. There are no runtime network calls, cookies, local storage, analytics, third-party fonts, or external assets.
+The page remains complete if JavaScript fails or is disabled. There are no runtime network calls, cookies, local storage, analytics, third-party fonts, or external assets. Session storage records only whether the current tab session has completed or dismissed the mascot hints.
 
 ## Mascot runtime
 
@@ -27,6 +27,8 @@ Pointer events provide one mouse, pen, and touch path with pointer capture and a
 The base owns the persistent viewport-level body state. During a base grab, it follows the pointer and the head responds through its local two-dimensional position, velocity, and angular state. During a head grab, a world-space head attachment anchor follows the pointer while the base integrates toward the corresponding rest position in variable-size substeps capped at 1/120 second. If the local head displacement reaches its elliptical limit, the base position is projected to the boundary and only follower velocity directed farther outside the constraint is removed; projection distance is never converted into velocity. Head release velocity is sampled from the driven head and divided between whole-body travel and local spring motion. Lateral and vertical damped spring forces handle the unheld state, drag acceleration, release momentum, and collision impulses. The trailing base has its own bounded damped angular state, while the existing head angle gains a velocity-sensitive trail target during base grabs; the directly held part keeps its current local angle for pointer stability. Whole-mascot airborne rotation remains a separate viewport-body transform. The spring's angle and length are derived from the base and head attachment points on every rendered frame, allowing sideways bend, stretch, compression, and diagonal deformation without layout reads in the animation loop. The base, head, spring, eyes, and shadow therefore render through separate transforms without competing for transform ownership.
 
 The home anchor is stored in document coordinates and converted to a viewport-relative return target from the current scroll position on every return frame. This lets a settled mascot return above or below the viewport, follow scroll changes during the return, and restore its docked document-flow state while the hero remains offscreen.
+
+Three lightweight first-session hints are scheduled with increasing delays and shown only while the mascot is docked, idle, visible, and the tab is active. The first valid mascot grab immediately hides and suppresses the sequence for the remainder of the tab session. Hint timers and classes remain separate from the physics state and rendering transforms.
 
 The loop throttles the docked idle animation, pauses on hidden tabs, and stops while a loose character is fully settled and waiting to return. When `IntersectionObserver` is supported, it suspends only the docked idle loop while the hero is outside the viewport; return eligibility does not depend on intersection state. Browsers without that API retain the throttled docked loop. Resize and orientation changes recalculate viewport bounds and the document-space home anchor, and non-returning loose characters are clamped back into reach.
 

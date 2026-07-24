@@ -9,6 +9,7 @@
 
   const face = mascot.querySelector(".bobble-face");
   const base = mascot.querySelector(".bobble-base");
+  const hint = mascot.querySelector("[data-mascot-hint]");
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const renderedProperties = new Map();
   const edge = 6;
@@ -65,6 +66,17 @@
     idlePulseAt: performance.now() + 2800 + Math.random() * 3000,
     hidden: document.hidden,
     hostVisible: true
+  };
+  const hintPhrases = ["Fling me", "Shake me", "Drop me"];
+  const hintDelays = [6000, 12000, 18000];
+  const hintStorageKey = "bobbleheadrob:mascot-hints";
+  const hintState = {
+    index: 0,
+    nextEligibleAt: performance.now() + hintDelays[0],
+    visible: false,
+    suppressed: false,
+    timer: 0,
+    hideTimer: 0
   };
 
   const tuning = {
@@ -133,6 +145,110 @@
   const numericProperty = (styles, name, fallback) => {
     const value = Number.parseFloat(styles.getPropertyValue(name));
     return Number.isFinite(value) ? value : fallback;
+  };
+
+  const readHintSession = () => {
+    try {
+      return window.sessionStorage.getItem(hintStorageKey);
+    } catch {
+      return null;
+    }
+  };
+
+  const writeHintSession = (value) => {
+    try {
+      window.sessionStorage.setItem(hintStorageKey, value);
+    } catch {
+      // The in-memory state still suppresses hints when storage is unavailable.
+    }
+  };
+
+  const clearHintTimer = () => {
+    if (hintState.timer) {
+      window.clearTimeout(hintState.timer);
+      hintState.timer = 0;
+    }
+  };
+
+  const clearHintHideTimer = () => {
+    if (hintState.hideTimer) {
+      window.clearTimeout(hintState.hideTimer);
+      hintState.hideTimer = 0;
+    }
+  };
+
+  const hideHint = () => {
+    clearHintHideTimer();
+    hintState.visible = false;
+    mascot.classList.remove("is-hint-visible");
+  };
+
+  const hintsAreEligible = () =>
+    Boolean(hint) &&
+    !hintState.suppressed &&
+    hintState.index < hintPhrases.length &&
+    state.mode === "docked" &&
+    state.hostVisible &&
+    !state.hidden;
+
+  const scheduleHint = () => {
+    clearHintTimer();
+
+    if (!hintsAreEligible()) {
+      return;
+    }
+
+    hintState.timer = window.setTimeout(
+      showHint,
+      Math.max(hintState.nextEligibleAt - performance.now(), 0)
+    );
+  };
+
+  function showHint() {
+    hintState.timer = 0;
+
+    if (!hintsAreEligible()) {
+      return;
+    }
+
+    const now = performance.now();
+    hint.textContent = hintPhrases[hintState.index];
+    hintState.index += 1;
+    hintState.visible = true;
+    mascot.classList.add("is-hint-visible");
+
+    if (hintState.index < hintPhrases.length) {
+      hintState.nextEligibleAt = now + hintDelays[hintState.index];
+    }
+
+    hintState.hideTimer = window.setTimeout(() => {
+      hideHint();
+
+      if (hintState.index >= hintPhrases.length) {
+        hintState.suppressed = true;
+        writeHintSession("completed");
+        return;
+      }
+
+      scheduleHint();
+    }, 3000);
+  }
+
+  const pauseHints = () => {
+    clearHintTimer();
+    hideHint();
+
+    if (hintState.index >= hintPhrases.length) {
+      hintState.suppressed = true;
+      writeHintSession("completed");
+    }
+  };
+
+  const suppressHints = () => {
+    hintState.suppressed = true;
+    clearHintTimer();
+    hideHint();
+    writeHintSession("interacted");
   };
 
   const updateDockDocumentTarget = () => {
@@ -363,6 +479,7 @@
       "--base-scale-x": "1",
       "--base-scale-y": "1"
     });
+    scheduleHint();
     requestFrame();
   };
 
@@ -475,6 +592,7 @@
       return;
     }
 
+    suppressHints();
     event.preventDefault();
     clearReturnTimer();
     const grabMode = grabModeForPointer(event);
@@ -1150,7 +1268,10 @@
     state.hidden = document.hidden;
     state.lastFrameAt = 0;
 
-    if (!state.hidden) {
+    if (state.hidden) {
+      pauseHints();
+    } else {
+      scheduleHint();
       requestFrame();
     }
   };
@@ -1184,7 +1305,10 @@
 
       if (state.hostVisible) {
         state.lastFrameAt = 0;
+        scheduleHint();
         requestFrame();
+      } else {
+        pauseHints();
       }
     });
 
@@ -1192,5 +1316,7 @@
   }
 
   updateGeometry();
+  hintState.suppressed = Boolean(readHintSession());
+  scheduleHint();
   requestFrame();
 })();

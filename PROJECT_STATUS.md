@@ -32,6 +32,7 @@ Interactive mascot prototype complete and ready for final manual and infrastruct
 - Attachment-derived spring bending, stretch, compression, and diagonal deformation with bounded displacement
 - Independent bounded tilt for the trailing head or base, with damped reversal overshoot and held-part stability
 - A planted docked base with varied head-led idle motion, occasional stronger bobbles, scroll awareness, and cursor reactions
+- Three subtle, increasingly delayed docked-idle hints with immediate session-scoped suppression after mascot interaction
 - Reduced-motion behavior that preserves eye tracking and direct dragging while suppressing fling and sustained motion
 - Visibility, resize, orientation, and offscreen safeguards that reduce work and keep a loose mascot reachable
 
@@ -47,6 +48,7 @@ Interactive mascot prototype complete and ready for final manual and infrastruct
 - Exact visual pointer deltas for both grab modes during positive and negative rotation with active scale deformation
 - Head-driven clamp, reversal, circular-motion, and release stability checks at simulated 60 Hz, 120 Hz, and uneven animation cadences
 - Automated above-viewport, below-viewport, mid-scroll, offscreen re-grab, visible-home, and reduced-motion return checks
+- Automated hint timing, sequence completion, offscreen gating, interaction suppression, session persistence, responsive placement, and accessibility-source checks
 - Source-level JavaScript syntax, page-link, fragment-target, metadata, XML, and deployment-file-scope checks
 
 ### Independent and real-device validation outstanding

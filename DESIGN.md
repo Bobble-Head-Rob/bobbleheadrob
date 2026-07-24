@@ -33,6 +33,8 @@ The mascot should feel observant and pleasantly physical, not frantic. Near-poin
 
 Slow overlapping idle forces and occasional bounded impulses replace a mechanical repeating nod. At the dock, the base stays planted while expressive but controlled lateral, vertical, and rotational head motion produces the bobble. Shadow offset and restrained parallax add depth without changing the established flat geometric construction. The rings, star, and plus stay anchored as part of the original composition.
 
+A small thought bubble introduces the mascot with three increasingly delayed prompts. It appears only while the character is docked and idle, never accepts pointer input, and disappears permanently for the tab session as soon as the visitor grabs the mascot.
+
 ## Accessibility
 
 - Semantic landmarks and heading order provide document structure.
