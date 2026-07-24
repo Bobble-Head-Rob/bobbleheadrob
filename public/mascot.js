@@ -540,7 +540,7 @@
           state.dragVelocityY
         );
         const targetTiltVelocity =
-          -clamp(
+          clamp(
             localVelocity.x / (geometry.unit * 18),
             -1,
             1
@@ -621,7 +621,7 @@
 
       state.headVelocityX = relativeVelocity.x;
       state.headVelocityY = relativeVelocity.y;
-      state.baseTiltVelocity -= clamp(
+      state.baseTiltVelocity += clamp(
         localFling.x * tuning.trailingTiltReleaseTransfer,
         -tuning.trailingTiltMaximumVelocity * 0.65,
         tuning.trailingTiltMaximumVelocity * 0.65
@@ -891,7 +891,7 @@
       );
 
       targetTilt = clamp(
-        -displacement * tuning.trailingTiltDisplacement -
+        displacement * tuning.trailingTiltDisplacement +
           relativeVelocity * tuning.trailingTiltVelocity,
         -tuning.trailingTiltLimit,
         tuning.trailingTiltLimit
