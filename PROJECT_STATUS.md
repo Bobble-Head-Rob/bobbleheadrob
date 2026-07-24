@@ -30,6 +30,7 @@ Interactive mascot prototype complete and ready for final manual and infrastruct
 - A two-body mascot model: viewport-level base physics plus independent two-axis head position, velocity, and angular state
 - Explicit head and base grab modes with direct targeting, preserved visual offsets, and part-specific trailing behavior
 - Attachment-derived spring bending, stretch, compression, and diagonal deformation with bounded displacement
+- Independent bounded tilt for the trailing head or base, with damped reversal overshoot and held-part stability
 - A planted docked base with varied head-led idle motion, occasional stronger bobbles, scroll awareness, and cursor reactions
 - Reduced-motion behavior that preserves eye tracking and direct dragging while suppressing fling and sustained motion
 - Visibility, resize, orientation, and offscreen safeguards that reduce work and keep a loose mascot reachable
@@ -42,6 +43,7 @@ Interactive mascot prototype complete and ready for final manual and infrastruct
 - Automated slow and rapid horizontal drag, two-axis and diagonal drag, direction reversal, release overshoot, four-edge collision, automatic return, and docked-idle checks
 - Exact transformed re-grabs in both rotation directions while base scale deformation was active
 - Automated head- and base-driven directional, diagonal, reversal, off-center grab, flick, slow-release, paused-release, and pointer-cancel checks
+- Directional trailing-body tilt, reversal overshoot, active-tilt release, strong-shake bounds, and planted-idle checks
 - Exact visual pointer deltas for both grab modes during positive and negative rotation with active scale deformation
 - Head-driven clamp, reversal, circular-motion, and release stability checks at simulated 60 Hz, 120 Hz, and uneven animation cadences
 - Automated above-viewport, below-viewport, mid-scroll, offscreen re-grab, visible-home, and reduced-motion return checks

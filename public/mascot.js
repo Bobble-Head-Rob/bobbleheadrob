@@ -42,6 +42,8 @@
     headVelocityX: 0,
     headVelocityY: 0,
     headAngularVelocity: 0,
+    baseTilt: 0,
+    baseTiltVelocity: 0,
     pointerX: -10000,
     pointerY: -10000,
     pointerSpeed: 0,
@@ -81,6 +83,15 @@
     maximumHeadDisplacement: 2.6,
     angularStiffness: 44,
     angularDamping: 7.4,
+    trailingTiltStiffness: 55,
+    trailingTiltDamping: 7,
+    trailingTiltDisplacement: 6,
+    trailingTiltVelocity: 2.4,
+    trailingTiltLimit: 10,
+    trailingTiltMaximumVelocity: 120,
+    trailingTiltDriveVelocity: 54,
+    trailingTiltDriveResponse: 32,
+    trailingTiltReleaseTransfer: 0.045,
     idleImpulseStrength: 10.2,
     idleVerticalForceScale: 0.61,
     idleRotationAmplitude: 1.35,
@@ -339,6 +350,8 @@
     state.vy = 0;
     state.rotation = 0;
     state.angularVelocity = 0;
+    state.baseTilt = 0;
+    state.baseTiltVelocity = 0;
     state.squash = 0;
     state.transientScaleX = 0;
     state.transientScaleY = 0;
@@ -520,6 +533,25 @@
         state.headAnchorOriginY + event.clientY - state.dragPointerY;
       state.dragVelocityX = (nextAnchorX - state.headAnchorX) / elapsed;
       state.dragVelocityY = (nextAnchorY - state.headAnchorY) / elapsed;
+
+      if (!reducedMotion.matches) {
+        const localVelocity = toBaseLocal(
+          state.dragVelocityX,
+          state.dragVelocityY
+        );
+        const targetTiltVelocity =
+          -clamp(
+            localVelocity.x / (geometry.unit * 18),
+            -1,
+            1
+          ) * tuning.trailingTiltDriveVelocity;
+        const tiltBlend =
+          1 - Math.exp(-tuning.trailingTiltDriveResponse * elapsed);
+
+        state.baseTiltVelocity +=
+          (targetTiltVelocity - state.baseTiltVelocity) * tiltBlend;
+      }
+
       state.headAnchorX = nextAnchorX;
       state.headAnchorY = nextAnchorY;
     } else {
@@ -585,8 +617,15 @@
         fling.y * tuning.headReleaseTransfer +
         retainedBaseY * (1 - tuning.headReleaseTransfer);
       const relativeVelocity = toBaseLocal(fling.x - nextVX, fling.y - nextVY);
+      const localFling = toBaseLocal(fling.x, fling.y);
+
       state.headVelocityX = relativeVelocity.x;
       state.headVelocityY = relativeVelocity.y;
+      state.baseTiltVelocity -= clamp(
+        localFling.x * tuning.trailingTiltReleaseTransfer,
+        -tuning.trailingTiltMaximumVelocity * 0.65,
+        tuning.trailingTiltMaximumVelocity * 0.65
+      );
     } else {
       nextVX = reducedMotion.matches ? 0 : fling.x;
       nextVY = reducedMotion.matches ? 0 : fling.y;
@@ -826,13 +865,73 @@
     clampHeadState();
   };
 
+  const integrateBaseTilt = (dt) => {
+    if (reducedMotion.matches) {
+      state.baseTilt = 0;
+      state.baseTiltVelocity = 0;
+      return;
+    }
+
+    if (state.mode === "dragging" && state.grabMode === "base") {
+      return;
+    }
+
+    let targetTilt = 0;
+
+    if (state.mode === "dragging" && state.grabMode === "head") {
+      const displacement = clamp(
+        state.headOffsetX / geometry.maximumHeadDisplacement,
+        -1,
+        1
+      );
+      const relativeVelocity = clamp(
+        state.headVelocityX / (geometry.unit * 18),
+        -1,
+        1
+      );
+
+      targetTilt = clamp(
+        -displacement * tuning.trailingTiltDisplacement -
+          relativeVelocity * tuning.trailingTiltVelocity,
+        -tuning.trailingTiltLimit,
+        tuning.trailingTiltLimit
+      );
+    }
+
+    const acceleration =
+      (targetTilt - state.baseTilt) * tuning.trailingTiltStiffness -
+      state.baseTiltVelocity * tuning.trailingTiltDamping;
+
+    state.baseTiltVelocity = clamp(
+      state.baseTiltVelocity + acceleration * dt,
+      -tuning.trailingTiltMaximumVelocity,
+      tuning.trailingTiltMaximumVelocity
+    );
+    state.baseTilt += state.baseTiltVelocity * dt;
+
+    if (Math.abs(state.baseTilt) > tuning.trailingTiltLimit) {
+      state.baseTilt = clamp(
+        state.baseTilt,
+        -tuning.trailingTiltLimit,
+        tuning.trailingTiltLimit
+      );
+
+      if (Math.sign(state.baseTiltVelocity) === Math.sign(state.baseTilt)) {
+        state.baseTiltVelocity *= -0.18;
+      }
+    }
+  };
+
   const integrateHead = (dt, now) => {
     const pointer = pointerTargets();
 
     if (state.mode === "dragging" && state.grabMode === "head") {
       integrateHeadGrab(dt);
+      integrateBaseTilt(dt);
       return pointer;
     }
+
+    integrateBaseTilt(dt);
 
     if (
       state.mode === "dragging" &&
@@ -883,17 +982,30 @@
     const targetY =
       pointer.y * geometry.unit * 0.16 * looseInfluence * motion +
       scroll * geometry.unit * 0.22 * motion;
+    const trailingHeadTilt =
+      state.mode === "dragging" && state.grabMode === "base" && !reducedMotion.matches
+        ? clamp(
+            state.headVelocityX / (geometry.unit * 18),
+            -1,
+            1
+          ) * tuning.trailingTiltVelocity
+        : 0;
     const targetRotation =
-      pointer.x * 4.5 * looseInfluence * motion +
-      state.headOffsetX / geometry.maximumHeadDisplacement * 7 * motion -
-      scroll * 4 +
-      (
-        dockedIdle
-          ? (
-              Math.sin(now * 0.00067 + state.idleSeed * 0.9) +
-              Math.sin(now * 0.00107 + state.idleSeed * 1.37) * 0.24
-            ) * tuning.idleRotationAmplitude
-          : 0
+      clamp(
+        pointer.x * 4.5 * looseInfluence * motion +
+          state.headOffsetX / geometry.maximumHeadDisplacement * 7 * motion +
+          trailingHeadTilt -
+          scroll * 4 +
+          (
+            dockedIdle
+              ? (
+                  Math.sin(now * 0.00067 + state.idleSeed * 0.9) +
+                  Math.sin(now * 0.00107 + state.idleSeed * 1.37) * 0.24
+                ) * tuning.idleRotationAmplitude
+              : 0
+          ),
+        -tuning.trailingTiltLimit,
+        tuning.trailingTiltLimit
       );
 
     const accelerationX =
@@ -950,7 +1062,7 @@
       "--spring-angle": `${springAngle.toFixed(2)}deg`,
       "--spring-length": `${springLength.toFixed(2)}px`,
       "--base-y": `${(squash * geometry.unit * 0.3).toFixed(2)}px`,
-      "--base-rotation": "0deg",
+      "--base-rotation": `${state.baseTilt.toFixed(2)}deg`,
       "--base-scale-x": baseScaleX.toFixed(4),
       "--base-scale-y": baseScaleY.toFixed(4),
       "--shadow-x": `${clamp(state.vx * -0.008, -12, 12).toFixed(2)}px`,
@@ -1002,7 +1114,9 @@
         Math.abs(state.headOffsetY) > 0.05 ||
         Math.abs(state.headVelocityX) > 0.1 ||
         Math.abs(state.headVelocityY) > 0.1 ||
-        Math.abs(state.headAngularVelocity) > 0.1);
+        Math.abs(state.headAngularVelocity) > 0.1 ||
+        Math.abs(state.baseTilt) > 0.05 ||
+        Math.abs(state.baseTiltVelocity) > 0.1);
 
     if (state.mode !== "loose" || looseStillMoving || !state.returnTimer) {
       requestFrame();
@@ -1046,6 +1160,8 @@
       state.vx = 0;
       state.vy = 0;
       state.angularVelocity = 0;
+      state.baseTilt = 0;
+      state.baseTiltVelocity = 0;
       scheduleReturn();
     }
 
