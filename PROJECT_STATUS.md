@@ -26,6 +26,8 @@ Interactive mascot prototype complete and ready for final manual and infrastruct
 - A brief personal note near the bottom of the homepage
 - A lightweight contact section linking to `rob@bobbleheadrob.com`
 - Pointer-aware, draggable hero mascot with capped fling physics, viewport collisions, impact response, and automatic return
+- Unrestricted loose-state whole-body rotation with leverage- and curvature-derived fling spin, contact-derived collision torque, floor rolling, and angular friction
+- Orientation-aware collision extents and settling that permit upright or either-side rest while tipping unstable inverted head balances consistently
 - Document-space home targeting that completes returns while the hero is offscreen and adapts to scrolling in progress
 - A two-body mascot model: viewport-level base physics plus independent two-axis head position, velocity, and angular state
 - Explicit head and base grab modes with direct targeting, preserved visual offsets, and part-specific trailing behavior
@@ -48,6 +50,10 @@ Interactive mascot prototype complete and ready for final manual and infrastruct
 - Exact visual pointer deltas for both grab modes during positive and negative rotation with active scale deformation
 - Head-driven clamp, reversal, circular-motion, and release stability checks at simulated 60 Hz, 120 Hz, and uneven animation cadences
 - Automated above-viewport, below-viewport, mid-scroll, offscreen re-grab, visible-home, and reduced-motion return checks
+- Browser-driven centered, off-center head, off-center base, curved, clockwise, counterclockwise, multi-revolution, ground-roll, sideways-settle, and rotational-unwind checks
+- Browser-driven rotated collision-bound checks and clean final docking after sideways and multi-turn loose states
+- A 224-case static compound-envelope matrix covering eight whole-body angles, maximum legal head travel, diagonal offsets, base tilt, and non-uniform scale with no measured visible edge intrusion
+- High-energy browser and fixed-step stress checks for head, spring, and base edge contact, repeated tumbling, torque direction, multi-turn stability, and less than 0.11px residual proxy penetration
 - Automated hint timing, sequence completion, offscreen gating, interaction suppression, session persistence, responsive placement, and accessibility-source checks
 - Source-level JavaScript syntax, page-link, fragment-target, metadata, XML, and deployment-file-scope checks
 
@@ -56,6 +62,7 @@ Interactive mascot prototype complete and ready for final manual and infrastruct
 - Independent visual and interaction review in ordinary desktop and mobile browsers
 - Physical touch-device testing on representative iOS and Android hardware
 - Rob's final physical mouse-wheel, trackpad, and mobile scrolling approval of docked scroll strength, rebound feel, and post-scroll idle resumption
+- Rob's final physical-device approval of high-energy spin, glancing-impact torque, rolling weight, inverted tipping, and upright-versus-sideways settling feel
 - Manual keyboard-only navigation and operating-system reduced-motion review
 - Subjective tuning review for startle intensity, hard impacts, and return timing
 

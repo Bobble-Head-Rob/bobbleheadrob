@@ -23,7 +23,7 @@ The hero bobblehead is an optional interactive flourish:
 - Move a mouse or trackpad pointer near the face to get a small eye and head reaction.
 - Drag the head or base directly with a mouse, pen, or touch, then release it gently or fling it.
 - When the base is grabbed, the independently sprung head trails; when the head is grabbed, the base trails beneath it.
-- A loose mascot collides with the viewport and returns to its hero position after it settles, even when the hero is offscreen.
+- A loose mascot can tumble through complete rotations, gain spin from off-center throws and impacts, roll or settle upright or sideways, and return to its hero position even when the hero is offscreen.
 - Reduced-motion mode keeps eye tracking and direct dragging while suppressing fling and sustained idle motion.
 
 The mascot remains decorative, is hidden from assistive technology, and is not part of the keyboard navigation path. The homepage implementation is a focused prototype for the brand character, not the separate, more game-like **Fling Pet** concept.

@@ -8,6 +8,7 @@
   }
 
   const face = mascot.querySelector(".bobble-face");
+  const spring = mascot.querySelector(".bobble-spring");
   const base = mascot.querySelector(".bobble-base");
   const hint = mascot.querySelector("[data-mascot-hint]");
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -34,6 +35,13 @@
     vy: 0,
     rotation: 0,
     angularVelocity: 0,
+    grabLeverX: 0,
+    grabLeverY: 0,
+    grabAngularScale: 1,
+    lastMovementDirection: 0,
+    groundTipDirection: 0,
+    groundedAge: 0,
+    settleAge: 0,
     squash: 0,
     transientScaleX: 0,
     transientScaleY: 0,
@@ -65,6 +73,7 @@
     lastFrameAt: 0,
     returnTimer: 0,
     returnAge: 0,
+    returnRotationTarget: 0,
     animationFrame: 0,
     idleSeed: Math.random() * Math.PI * 2,
     idlePulseAt: performance.now() + 2800 + Math.random() * 3000,
@@ -86,9 +95,26 @@
   const tuning = {
     gravity: 1450,
     airDrag: 0.72,
-    angularDrag: 1.6,
+    airborneAngularDamping: 0.24,
     restitution: 0.58,
     floorFriction: 0.76,
+    flingAngularCoupling: 0.88,
+    grabLeverageContribution: 0.72,
+    curvedReleaseContribution: 0.34,
+    maximumAngularVelocity: 900,
+    wallTorqueCoupling: 0.3,
+    ceilingTorqueCoupling: 0.34,
+    groundTorqueCoupling: 0.4,
+    angularRestitution: 0.94,
+    groundLinearFriction: 1.25,
+    groundAngularFriction: 2.4,
+    groundSlipFriction: 4.8,
+    groundRollCoupling: 0.42,
+    groundStabilityStiffness: 8.5,
+    groundStabilityDamping: 3.7,
+    invertedTipAcceleration: 48,
+    contactTorqueThreshold: 40,
+    collisionBounceThreshold: 90,
     maxFling: 1900,
     returnDelay: 2300,
     returnStiffness: 16,
@@ -138,6 +164,15 @@
     unit: 16,
     bodyWidth: 136,
     bodyHeight: 240,
+    bodyOriginX: 68,
+    bodyOriginY: 204,
+    headWidth: 136,
+    headHeight: 120,
+    springWidth: 25.6,
+    springPivotY: 168,
+    baseWidth: 128,
+    baseHeight: 72,
+    collisionPadding: 2,
     springRestLength: 48,
     maximumHeadDisplacement: 36,
     maximumVerticalDisplacement: 27,
@@ -146,6 +181,14 @@
   };
 
   const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+  const degreesToRadians = Math.PI / 180;
+  const radiansToDegrees = 180 / Math.PI;
+  const signedAngle = (degrees) => {
+    const wrapped = (degrees + 180) % 360;
+    return (wrapped < 0 ? wrapped + 360 : wrapped) - 180;
+  };
+  const nearestEquivalentAngle = (target, reference) =>
+    target + Math.round((reference - target) / 360) * 360;
   const clampVectorMagnitude = (x, y, maximum) => {
     const magnitude = Math.hypot(x, y);
 
@@ -281,6 +324,15 @@
     geometry.unit = Number.parseFloat(getComputedStyle(mascot).fontSize) || 16;
     geometry.bodyWidth = mascot.offsetWidth;
     geometry.bodyHeight = mascot.offsetHeight;
+    geometry.bodyOriginX = geometry.bodyWidth * 0.5;
+    geometry.bodyOriginY = geometry.bodyHeight * 0.85;
+    geometry.headWidth = face.offsetWidth;
+    geometry.headHeight = face.offsetHeight;
+    geometry.springWidth = spring.offsetWidth;
+    geometry.springPivotY = geometry.unit * 10.5;
+    geometry.baseWidth = base.offsetWidth;
+    geometry.baseHeight = base.offsetHeight;
+    geometry.collisionPadding = clamp(geometry.unit * 0.14, 1.4, 2.4);
     geometry.springRestLength = geometry.unit * 3;
     geometry.maximumHeadDisplacement = geometry.unit * tuning.maximumHeadDisplacement;
     geometry.maximumVerticalDisplacement = geometry.maximumHeadDisplacement * 0.75;
@@ -391,20 +443,173 @@
     clampHeadState();
   };
 
-  const dimensions = () => ({
-    width: geometry.bodyWidth,
-    height: geometry.bodyHeight
-  });
-
-  const viewportBounds = () => {
-    const { width, height } = dimensions();
-    const rotationInset = clamp(Math.max(width, height) * 0.1, 12, 24);
+  const currentSpringGeometry = () => {
+    const dx = state.headOffsetX;
+    const dy = state.headOffsetY - geometry.springRestLength;
 
     return {
-      minX: edge + rotationInset,
-      maxX: Math.max(edge + rotationInset, window.innerWidth - width - edge - rotationInset),
-      minY: edge + rotationInset,
-      maxY: Math.max(edge + rotationInset, window.innerHeight - height - edge - rotationInset)
+      angle: Math.atan2(dx, -dy) * radiansToDegrees,
+      length: clamp(
+        Math.hypot(dx, dy),
+        geometry.springRestLength * 0.55,
+        geometry.springRestLength * 1.55
+      )
+    };
+  };
+
+  const currentBaseTransform = () => {
+    const verticalSpeed = clamp(Math.abs(state.vy) / 1800, 0, 0.07);
+    const squash = reducedMotion.matches ? 0 : state.squash;
+
+    return {
+      y: squash * geometry.unit * 0.3,
+      scaleX:
+        1 +
+        squash -
+        verticalSpeed * 0.35 +
+        state.transientScaleX,
+      scaleY:
+        1 -
+        squash +
+        verticalSpeed +
+        state.transientScaleY
+    };
+  };
+
+  const transformedBoxPoints = (
+    pivotX,
+    pivotY,
+    width,
+    height,
+    rotation,
+    scaleX = 1,
+    scaleY = 1
+  ) => {
+    const padding = geometry.collisionPadding;
+    const halfWidth = width * 0.5 + padding;
+    const top = -height - padding;
+    const bottom = padding;
+    const radians = rotation * degreesToRadians;
+    const cosine = Math.cos(radians);
+    const sine = Math.sin(radians);
+
+    return [
+      { x: -halfWidth, y: top },
+      { x: halfWidth, y: top },
+      { x: halfWidth, y: bottom },
+      { x: -halfWidth, y: bottom }
+    ].map((point) => {
+      const scaledX = point.x * scaleX;
+      const scaledY = point.y * scaleY;
+
+      return {
+        x: pivotX + scaledX * cosine - scaledY * sine,
+        y: pivotY + scaledX * sine + scaledY * cosine
+      };
+    });
+  };
+
+  const localVisualEnvelope = () => {
+    const springGeometry = currentSpringGeometry();
+    const baseTransform = currentBaseTransform();
+    const headPivotX = geometry.bodyOriginX + state.headOffsetX;
+    const headPivotY = geometry.headHeight + state.headOffsetY;
+    const basePivotY = geometry.bodyHeight + baseTransform.y;
+
+    return [
+      ...transformedBoxPoints(
+        headPivotX,
+        headPivotY,
+        geometry.headWidth,
+        geometry.headHeight,
+        -4 + state.headRotation
+      ),
+      ...transformedBoxPoints(
+        geometry.bodyOriginX,
+        geometry.springPivotY,
+        geometry.springWidth,
+        springGeometry.length,
+        springGeometry.angle
+      ),
+      ...transformedBoxPoints(
+        geometry.bodyOriginX,
+        basePivotY,
+        geometry.baseWidth,
+        geometry.baseHeight,
+        state.baseTilt,
+        baseTransform.scaleX,
+        baseTransform.scaleY
+      )
+    ];
+  };
+
+  const rotatedGeometry = (rotation = state.rotation) => {
+    const pivotX = geometry.bodyOriginX;
+    const pivotY = geometry.bodyOriginY;
+    const centerX = geometry.bodyWidth * 0.5;
+    const centerY = geometry.bodyHeight * 0.5;
+    const radians = rotation * degreesToRadians;
+    const cosine = Math.cos(radians);
+    const sine = Math.sin(radians);
+    const points = localVisualEnvelope().map((point) => {
+      const localX = point.x - pivotX;
+      const localY = point.y - pivotY;
+
+      return {
+        x: pivotX + localX * cosine - localY * sine,
+        y: pivotY + localX * sine + localY * cosine
+      };
+    });
+    const worldCenter = {
+      x:
+        pivotX +
+        (centerX - pivotX) * cosine -
+        (centerY - pivotY) * sine,
+      y:
+        pivotY +
+        (centerX - pivotX) * sine +
+        (centerY - pivotY) * cosine
+    };
+    const support = (axis, direction) => {
+      const extreme = Math.max(
+        ...points.map((point) => point[axis] * direction)
+      );
+      const contacts = points.filter(
+        (point) => Math.abs(point[axis] * direction - extreme) < 0.01
+      );
+
+      return {
+        x:
+          contacts.reduce((total, point) => total + point.x, 0) /
+          contacts.length,
+        y:
+          contacts.reduce((total, point) => total + point.y, 0) /
+          contacts.length
+      };
+    };
+
+    return {
+      minX: Math.min(...points.map((point) => point.x)),
+      maxX: Math.max(...points.map((point) => point.x)),
+      minY: Math.min(...points.map((point) => point.y)),
+      maxY: Math.max(...points.map((point) => point.y)),
+      center: worldCenter,
+      left: support("x", -1),
+      right: support("x", 1),
+      top: support("y", -1),
+      bottom: support("y", 1)
+    };
+  };
+
+  const viewportBounds = (rotation = state.rotation) => {
+    const extents = rotatedGeometry(rotation);
+
+    return {
+      minX: edge - extents.minX,
+      maxX: Math.max(edge - extents.minX, window.innerWidth - edge - extents.maxX),
+      minY: edge - extents.minY,
+      maxY: Math.max(edge - extents.minY, window.innerHeight - edge - extents.maxY),
+      extents
     };
   };
 
@@ -443,6 +648,7 @@
 
       state.mode = "returning";
       state.returnAge = 0;
+      state.returnRotationTarget = nearestEquivalentAngle(0, state.rotation);
       state.vx = 0;
       state.vy = -28;
       state.angularVelocity *= 0.2;
@@ -486,6 +692,9 @@
     state.angularVelocity = 0;
     state.baseTilt = 0;
     state.baseTiltVelocity = 0;
+    state.groundedAge = 0;
+    state.settleAge = 0;
+    state.groundTipDirection = 0;
     state.squash = 0;
     state.transientScaleX = 0;
     state.transientScaleY = 0;
@@ -526,6 +735,80 @@
     }
 
     return { x, y };
+  };
+
+  const curvedReleaseVelocity = () => {
+    if (state.samples.length < 3) {
+      return 0;
+    }
+
+    let weightedTurn = 0;
+    let totalWeight = 0;
+
+    for (let index = 2; index < state.samples.length; index += 1) {
+      const first = state.samples[index - 2];
+      const middle = state.samples[index - 1];
+      const last = state.samples[index];
+      const firstElapsed = Math.max((middle.time - first.time) / 1000, 0.008);
+      const lastElapsed = Math.max((last.time - middle.time) / 1000, 0.008);
+      const firstVelocity = {
+        x: (middle.x - first.x) / firstElapsed,
+        y: (middle.y - first.y) / firstElapsed
+      };
+      const lastVelocity = {
+        x: (last.x - middle.x) / lastElapsed,
+        y: (last.y - middle.y) / lastElapsed
+      };
+      const firstSpeed = Math.hypot(firstVelocity.x, firstVelocity.y);
+      const lastSpeed = Math.hypot(lastVelocity.x, lastVelocity.y);
+
+      if (firstSpeed < 40 || lastSpeed < 40) {
+        continue;
+      }
+
+      const cross =
+        firstVelocity.x * lastVelocity.y -
+        firstVelocity.y * lastVelocity.x;
+      const dot =
+        firstVelocity.x * lastVelocity.x +
+        firstVelocity.y * lastVelocity.y;
+      const turn = Math.atan2(cross, dot);
+      const elapsed = Math.max((last.time - first.time) / 2000, 0.012);
+      const weight = clamp((firstSpeed + lastSpeed) / (2 * tuning.maxFling), 0, 1);
+
+      weightedTurn += turn / elapsed * radiansToDegrees * weight;
+      totalWeight += weight;
+    }
+
+    return totalWeight ? weightedTurn / totalWeight : 0;
+  };
+
+  const releaseAngularVelocity = (fling) => {
+    const localFling = toBaseLocal(fling.x, fling.y);
+    const radiusSquared = Math.max(
+      state.grabLeverX * state.grabLeverX +
+        state.grabLeverY * state.grabLeverY,
+      geometry.unit * geometry.unit * 0.8
+    );
+    const leverageVelocity =
+      (
+        state.grabLeverX * localFling.y -
+        state.grabLeverY * localFling.x
+      ) /
+      radiusSquared *
+      radiansToDegrees;
+    const curvedVelocity = curvedReleaseVelocity();
+
+    return clamp(
+      (
+        leverageVelocity *
+          tuning.grabLeverageContribution *
+          state.grabAngularScale +
+        curvedVelocity * tuning.curvedReleaseContribution
+      ) * tuning.flingAngularCoupling,
+      -tuning.maximumAngularVelocity,
+      tuning.maximumAngularVelocity
+    );
   };
 
   const updatePointerAwareness = (event) => {
@@ -622,6 +905,13 @@
     const styles = getComputedStyle(mascot);
     const baseScaleX = numericProperty(styles, "--base-scale-x", 1);
     const baseScaleY = numericProperty(styles, "--base-scale-y", 1);
+    const bodyGeometry = rotatedGeometry();
+    const bodyCenterX = state.x + bodyGeometry.center.x;
+    const bodyCenterY = state.y + bodyGeometry.center.y;
+    const grabLever = toBaseLocal(
+      event.clientX - bodyCenterX,
+      event.clientY - bodyCenterY
+    );
 
     state.mode = "dragging";
     state.grabMode = grabMode;
@@ -632,6 +922,12 @@
     state.dragPointerY = event.clientY;
     state.transientScaleX = baseScaleX - 1;
     state.transientScaleY = baseScaleY - 1;
+    state.grabLeverX = grabLever.x;
+    state.grabLeverY = grabLever.y;
+    state.grabAngularScale = grabMode === "head" ? 1.12 : 0.84;
+    state.groundedAge = 0;
+    state.settleAge = 0;
+    state.groundTipDirection = 0;
     state.squash = 0;
     state.vx = 0;
     state.vy = 0;
@@ -669,6 +965,9 @@
         state.headAnchorOriginY + event.clientY - state.dragPointerY;
       state.dragVelocityX = (nextAnchorX - state.headAnchorX) / elapsed;
       state.dragVelocityY = (nextAnchorY - state.headAnchorY) / elapsed;
+      if (Math.abs(state.dragVelocityX) > 4) {
+        state.lastMovementDirection = Math.sign(state.dragVelocityX);
+      }
 
       if (!reducedMotion.matches) {
         const localVelocity = toBaseLocal(
@@ -719,6 +1018,9 @@
         (velocityY - state.dragVelocityY) * tuning.dragVelocityCoupling * motion;
       state.dragVelocityX = velocityX;
       state.dragVelocityY = velocityY;
+      if (Math.abs(nextX - previousX) > 0.1) {
+        state.lastMovementDirection = Math.sign(nextX - previousX);
+      }
       clampHeadState();
     }
 
@@ -777,7 +1079,11 @@
     state.pointerId = null;
     state.vx = nextVX;
     state.vy = nextVY;
-    state.angularVelocity = reducedMotion.matches ? 0 : clamp(fling.x * 0.075, -120, 120);
+    state.angularVelocity =
+      reducedMotion.matches || cancelled ? 0 : releaseAngularVelocity(fling);
+    if (Math.abs(nextVX) > 4) {
+      state.lastMovementDirection = Math.sign(nextVX);
+    }
     state.dragVelocityX = 0;
     state.dragVelocityY = 0;
     state.grabMode = null;
@@ -795,38 +1101,209 @@
     requestFrame();
   };
 
-  const collideWithViewport = () => {
-    const bounds = viewportBounds();
-    let impact = 0;
-
-    if (state.x <= bounds.minX && state.vx < 0) {
-      state.x = bounds.minX;
-      impact = Math.max(impact, Math.abs(state.vx));
-      state.vx *= -tuning.restitution;
-      state.angularVelocity += state.vy * 0.025;
-    } else if (state.x >= bounds.maxX && state.vx > 0) {
-      state.x = bounds.maxX;
-      impact = Math.max(impact, Math.abs(state.vx));
-      state.vx *= -tuning.restitution;
-      state.angularVelocity -= state.vy * 0.025;
+  const applyContactTorque = (
+    normalX,
+    normalY,
+    contact,
+    geometryAtImpact,
+    coupling
+  ) => {
+    if (reducedMotion.matches) {
+      state.angularVelocity = 0;
+      return 0;
     }
 
-    if (state.y <= bounds.minY && state.vy < 0) {
+    const radius = Math.max(
+      Math.hypot(
+        contact.x - geometryAtImpact.center.x,
+        contact.y - geometryAtImpact.center.y
+      ),
+      geometry.unit * 2
+    );
+    const leverX = contact.x - geometryAtImpact.center.x;
+    const leverY = contact.y - geometryAtImpact.center.y;
+    const angularRadians = state.angularVelocity * degreesToRadians;
+    const contactVelocityX = state.vx - angularRadians * leverY;
+    const contactVelocityY = state.vy + angularRadians * leverX;
+    const normalSpeed = Math.max(
+      0,
+      -(contactVelocityX * normalX + contactVelocityY * normalY)
+    );
+    if (normalSpeed < tuning.contactTorqueThreshold) {
+      return normalSpeed;
+    }
+
+    const tangentX = -normalY;
+    const tangentY = normalX;
+    const tangentialSpeed =
+      contactVelocityX * tangentX + contactVelocityY * tangentY;
+    const normalizedLever =
+      (leverX * normalY - leverY * normalX) / radius;
+    const angularImpulse =
+      (
+        normalSpeed * normalizedLever +
+        tangentialSpeed * 0.28
+      ) * coupling;
+
+    state.angularVelocity = clamp(
+      state.angularVelocity * tuning.angularRestitution + angularImpulse,
+      -tuning.maximumAngularVelocity,
+      tuning.maximumAngularVelocity
+    );
+
+    return normalSpeed;
+  };
+
+  const collideWithViewport = () => {
+    const bounds = viewportBounds();
+    const extents = bounds.extents;
+    let impact = 0;
+    let grounded = false;
+
+    if (state.x <= bounds.minX) {
+      state.x = bounds.minX;
+      const contactImpact = applyContactTorque(
+        1,
+        0,
+        extents.left,
+        extents,
+        tuning.wallTorqueCoupling
+      );
+      impact = Math.max(impact, contactImpact);
+      if (state.vx < 0) {
+        state.vx *= -tuning.restitution;
+      }
+    } else if (state.x >= bounds.maxX) {
+      state.x = bounds.maxX;
+      const contactImpact = applyContactTorque(
+        -1,
+        0,
+        extents.right,
+        extents,
+        tuning.wallTorqueCoupling
+      );
+      impact = Math.max(impact, contactImpact);
+      if (state.vx > 0) {
+        state.vx *= -tuning.restitution;
+      }
+    }
+
+    if (state.y <= bounds.minY) {
       state.y = bounds.minY;
-      impact = Math.max(impact, Math.abs(state.vy));
-      state.vy *= -tuning.restitution;
-    } else if (state.y >= bounds.maxY && state.vy > 0) {
+      const contactImpact = applyContactTorque(
+        0,
+        1,
+        extents.top,
+        extents,
+        tuning.ceilingTorqueCoupling
+      );
+      impact = Math.max(impact, contactImpact);
+      if (state.vy < 0) {
+        state.vy *= -tuning.restitution;
+      }
+    } else if (state.y >= bounds.maxY - 1.5) {
       state.y = bounds.maxY;
-      impact = Math.max(impact, Math.abs(state.vy));
-      state.vy *= -tuning.restitution;
-      state.vx *= tuning.floorFriction;
-      state.angularVelocity *= 0.76;
+      const contactImpact = applyContactTorque(
+        0,
+        -1,
+        extents.bottom,
+        extents,
+        tuning.groundTorqueCoupling
+      );
+      impact = Math.max(impact, contactImpact);
+
+      if (state.vy > tuning.collisionBounceThreshold) {
+        state.vy *= -tuning.restitution;
+        state.vx *= tuning.floorFriction;
+      } else if (state.vy >= 0) {
+        grounded = true;
+        state.vy = 0;
+      }
     }
 
     if (impact > 80 && !reducedMotion.matches) {
       state.squash = clamp(impact / 1560, 0.05, 0.245);
       state.headAngularVelocity += clamp(state.vx * 0.03, -42, 42);
     }
+
+    return { grounded, impact };
+  };
+
+  const chooseGroundTipDirection = () => {
+    if (Math.abs(state.angularVelocity) > 2) {
+      return Math.sign(state.angularVelocity);
+    }
+
+    if (Math.abs(state.vx) > 3) {
+      return Math.sign(state.vx);
+    }
+
+    if (state.lastMovementDirection) {
+      return state.lastMovementDirection;
+    }
+
+    return 1;
+  };
+
+  const groundRestTarget = () => {
+    const orientation = signedAngle(state.rotation);
+
+    if (Math.abs(orientation) > 135) {
+      if (!state.groundTipDirection) {
+        state.groundTipDirection = chooseGroundTipDirection();
+      }
+
+      const sideTarget = state.groundTipDirection > 0 ? 270 : 90;
+      return nearestEquivalentAngle(sideTarget, state.rotation);
+    }
+
+    state.groundTipDirection = 0;
+    const candidates = [-90, 0, 90].map((target) =>
+      nearestEquivalentAngle(target, state.rotation)
+    );
+
+    return candidates.reduce((nearest, target) =>
+      Math.abs(target - state.rotation) < Math.abs(nearest - state.rotation)
+        ? target
+        : nearest
+    );
+  };
+
+  const integrateGroundContact = (dt) => {
+    const target = groundRestTarget();
+    const orientation = signedAngle(state.rotation);
+    const inverted = Math.abs(orientation) > 135;
+    const angularAcceleration =
+      (target - state.rotation) * tuning.groundStabilityStiffness -
+      state.angularVelocity * tuning.groundStabilityDamping +
+      (inverted ? state.groundTipDirection * tuning.invertedTipAcceleration : 0);
+    const rollRadius = Math.max(geometry.unit * 3.2, 32);
+    const rollingSpeed =
+      state.angularVelocity * degreesToRadians * rollRadius;
+    const slip = state.vx - rollingSpeed;
+    const slipTransfer =
+      slip * (1 - Math.exp(-tuning.groundSlipFriction * dt));
+
+    state.vx -= slipTransfer * 0.58;
+    state.angularVelocity +=
+      slipTransfer /
+      rollRadius *
+      radiansToDegrees *
+      tuning.groundRollCoupling;
+    state.angularVelocity += angularAcceleration * dt;
+    state.vx *= Math.exp(-tuning.groundLinearFriction * dt);
+    state.angularVelocity *= Math.exp(-tuning.groundAngularFriction * dt);
+    state.angularVelocity = clamp(
+      state.angularVelocity,
+      -tuning.maximumAngularVelocity,
+      tuning.maximumAngularVelocity
+    );
+
+    if (Math.abs(state.vx) > 3) {
+      state.lastMovementDirection = Math.sign(state.vx);
+    }
+
+    return target;
   };
 
   const integrateLooseBody = (dt) => {
@@ -839,18 +1316,29 @@
       const damping = reducedMotion.matches ? 7.5 : tuning.returnDamping;
       const ax = (target.x - state.x) * stiffness - state.vx * damping;
       const ay = (target.y - state.y) * stiffness - state.vy * damping;
+      const rotationError = state.returnRotationTarget - state.rotation;
       state.vx += ax * dt;
       state.vy += ay * dt;
       state.x += state.vx * dt;
       state.y += state.vy * dt;
-      state.angularVelocity += (-state.rotation * 18 - state.angularVelocity * 7) * dt;
+      state.angularVelocity +=
+        (rotationError * 18 - state.angularVelocity * 7) * dt;
       state.rotation += state.angularVelocity * dt;
       state.returnAge += dt;
 
       const distance = Math.hypot(target.x - state.x, target.y - state.y);
       const speed = Math.hypot(state.vx, state.vy);
+      const angularDistance = Math.abs(
+        state.returnRotationTarget - state.rotation
+      );
 
-      if (state.returnAge > 0.5 && distance < 0.8 && speed < 8) {
+      if (
+        state.returnAge > 0.5 &&
+        distance < 0.8 &&
+        speed < 8 &&
+        angularDistance < 1.2 &&
+        Math.abs(state.angularVelocity) < 7
+      ) {
         applyBodyVelocityChange(previousVX, previousVY);
         returnToDock();
         return;
@@ -868,35 +1356,45 @@
     state.vy += tuning.gravity * dt;
     state.vx *= air;
     state.vy *= Math.exp(-0.08 * dt);
-    state.angularVelocity *= Math.exp(-tuning.angularDrag * dt);
+    state.angularVelocity *= Math.exp(-tuning.airborneAngularDamping * dt);
     state.x += state.vx * dt;
     state.y += state.vy * dt;
     state.rotation += state.angularVelocity * dt;
 
-    if (Math.abs(state.rotation) > 18) {
-      state.rotation = clamp(state.rotation, -18, 18);
-      state.angularVelocity *= -0.28;
+    if (Math.abs(state.rotation) > 36000) {
+      state.rotation = signedAngle(state.rotation);
     }
 
-    collideWithViewport();
+    const collision = collideWithViewport();
+    let restTarget = null;
 
-    const bounds = viewportBounds();
-    const onFloor = state.y >= bounds.maxY - 0.5;
-    const settled =
-      onFloor &&
-      Math.abs(state.vx) < 9 &&
-      Math.abs(state.vy) < 28 &&
-      Math.abs(state.angularVelocity) < 4;
+    if (collision.grounded) {
+      state.groundedAge += dt;
+      restTarget = integrateGroundContact(dt);
+      const restError = Math.abs(restTarget - state.rotation);
+      const stable =
+        state.groundedAge > 0.24 &&
+        restError < 3 &&
+        Math.abs(state.vx) < 7 &&
+        Math.abs(state.vy) < 8 &&
+        Math.abs(state.angularVelocity) < 3;
 
-    if (settled) {
-      state.vx = 0;
-      state.vy = 0;
-      state.angularVelocity = 0;
-      state.rotation *= 0.92;
+      state.settleAge = stable ? state.settleAge + dt : 0;
 
-      if (!state.returnTimer) {
-        scheduleReturn();
+      if (state.settleAge > 0.32) {
+        state.vx = 0;
+        state.vy = 0;
+        state.angularVelocity = 0;
+        state.rotation = restTarget;
+
+        if (!state.returnTimer) {
+          scheduleReturn();
+        }
       }
+    } else {
+      state.groundedAge = 0;
+      state.settleAge = 0;
+      state.groundTipDirection = 0;
     }
 
     applyBodyVelocityChange(previousVX, previousVY);
@@ -1227,23 +1725,36 @@
     return pointer;
   };
 
+  const resolvePostHeadCollision = () => {
+    if (state.mode !== "loose" || reducedMotion.matches) {
+      return;
+    }
+
+    const bounds = viewportBounds();
+    const outside =
+      state.x < bounds.minX - 0.05 ||
+      state.x > bounds.maxX + 0.05 ||
+      state.y < bounds.minY - 0.05 ||
+      state.y > bounds.maxY + 0.05;
+
+    if (!outside) {
+      return;
+    }
+
+    const previousVX = state.vx;
+    const previousVY = state.vy;
+    collideWithViewport();
+    applyBodyVelocityChange(previousVX, previousVY);
+  };
+
   const render = (now, pointer, dt) => {
     const docked = state.mode === "docked";
     const bodyX = docked ? 0 : state.x;
     const bodyY = docked ? 0 : state.y;
     const bodyRotation = docked ? 0 : state.rotation;
-    const verticalSpeed = clamp(Math.abs(state.vy) / 1800, 0, 0.07);
     const squash = reducedMotion.matches ? 0 : state.squash;
-    const baseScaleX = 1 + squash - verticalSpeed * 0.35 + state.transientScaleX;
-    const baseScaleY = 1 - squash + verticalSpeed + state.transientScaleY;
-    const springDX = state.headOffsetX;
-    const springDY = state.headOffsetY - geometry.springRestLength;
-    const springLength = clamp(
-      Math.hypot(springDX, springDY),
-      geometry.springRestLength * 0.55,
-      geometry.springRestLength * 1.55
-    );
-    const springAngle = Math.atan2(springDX, -springDY) * 180 / Math.PI;
+    const baseTransform = currentBaseTransform();
+    const springGeometry = currentSpringGeometry();
     const eyeX = pointer.x * 3.2;
     const eyeY = pointer.y * 2.4;
     const speedLift = docked ? 0 : clamp((window.innerHeight - state.y) / window.innerHeight, 0, 1);
@@ -1255,19 +1766,18 @@
       "--head-x": `${state.headOffsetX.toFixed(2)}px`,
       "--head-y": `${state.headOffsetY.toFixed(2)}px`,
       "--head-rotation": `${state.headRotation.toFixed(2)}deg`,
-      "--spring-angle": `${springAngle.toFixed(2)}deg`,
-      "--spring-length": `${springLength.toFixed(2)}px`,
-      "--base-y": `${(squash * geometry.unit * 0.3).toFixed(2)}px`,
+      "--spring-angle": `${springGeometry.angle.toFixed(2)}deg`,
+      "--spring-length": `${springGeometry.length.toFixed(2)}px`,
+      "--base-y": `${baseTransform.y.toFixed(2)}px`,
       "--base-rotation": `${state.baseTilt.toFixed(2)}deg`,
-      "--base-scale-x": baseScaleX.toFixed(4),
-      "--base-scale-y": baseScaleY.toFixed(4),
+      "--base-scale-x": baseTransform.scaleX.toFixed(4),
+      "--base-scale-y": baseTransform.scaleY.toFixed(4),
       "--shadow-x": `${clamp(state.vx * -0.008, -12, 12).toFixed(2)}px`,
       "--shadow-y": `${(12 + speedLift * 12).toFixed(2)}px`,
       "--shadow-blur": `${(18 + speedLift * 14).toFixed(2)}px`,
       "--eye-x": `${eyeX.toFixed(2)}px`,
       "--eye-y": `${eyeY.toFixed(2)}px`
     });
-
     state.squash *= Math.exp(-7.4 * dt);
 
     if (state.mode !== "dragging") {
@@ -1299,6 +1809,7 @@
 
     integrateLooseBody(dt);
     const pointer = integrateHead(dt, now);
+    resolvePostHeadCollision();
     render(now, pointer, dt);
 
     const looseStillMoving =

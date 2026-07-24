@@ -33,6 +33,8 @@ The mascot should feel observant and pleasantly physical, not frantic. Near-poin
 
 Slow overlapping idle forces and occasional bounded impulses replace a mechanical repeating nod. At the dock, the base stays planted while expressive but controlled lateral, vertical, and rotational head motion produces the bobble. Shadow offset and restrained parallax add depth without changing the established flat geometric construction. The rings, star, and plus stay anchored as part of the original composition.
 
+Once loose, the full character may rotate continuously rather than favoring upright. Straight centered throws carry little spin; leverage, curved releases, glancing impacts, and floor travel add readable angular momentum. A compact compound collision envelope follows the displaced head, spring, and tilted or scaled base closely enough for visible pieces—not merely the invisible host box—to meet viewport edges. It remains intentionally simplified rather than tracing the mascot artwork pixel by pixel. Airborne tumbling stays energetic, while floor friction converts motion into bounded rolling and lets the mascot rock into an upright or either-side rest. The wide base is a stable upright support, either side is an acceptable resting pose, and a head-first inverted balance tips consistently toward a side instead of remaining unnaturally poised. Automatic return is the only phase that deliberately unwinds the whole character to upright.
+
 A small thought bubble introduces the mascot with three increasingly delayed prompts. It appears only while the character is docked and idle, never accepts pointer input, and disappears permanently for the tab session as soon as the visitor grabs the mascot.
 
 ## Accessibility
