@@ -56,6 +56,10 @@
     startleAt: 0,
     samples: [],
     scrollVelocity: 0,
+    dockedScrollVelocity: 0,
+    dockedScrollActiveUntil: 0,
+    dockedScrollDirection: 0,
+    dockedScrollIdleBlend: 1,
     lastScrollY: window.scrollY,
     lastScrollAt: performance.now(),
     lastFrameAt: 0,
@@ -110,6 +114,13 @@
     idlePulseLateralVelocity: 44,
     idlePulseVerticalVelocity: 24,
     idlePulseAngularVelocity: 32,
+    dockedScrollDisplacement: 0.52,
+    dockedScrollVelocityCoupling: 0.026,
+    dockedScrollImpulseLimit: 64,
+    dockedScrollActivityThreshold: 0.012,
+    dockedScrollActivityHold: 180,
+    dockedScrollIdleFadeIn: 5.5,
+    dockedScrollSampleWindow: 0.12,
     dragPositionCoupling: 0.96,
     dragVelocityCoupling: 0.19,
     bodyAccelerationCoupling: 0.74,
@@ -145,6 +156,10 @@
   const numericProperty = (styles, name, fallback) => {
     const value = Number.parseFloat(styles.getPropertyValue(name));
     return Number.isFinite(value) ? value : fallback;
+  };
+
+  const scheduleIdlePulse = (now) => {
+    state.idlePulseAt = now + 2800 + Math.random() * 3000;
   };
 
   const readHintSession = () => {
@@ -1067,19 +1082,40 @@
     const looseInfluence = state.mode === "docked" ? 1 : 0.35;
     const scrollInfluence = state.mode === "docked" ? 1 : 0.18;
     const scroll = clamp(state.scrollVelocity / 1400, -1, 1) * scrollInfluence;
+    const dockedScroll =
+      state.mode === "docked"
+        ? clamp(state.dockedScrollVelocity / 1400, -1, 1)
+        : 0;
+    const dockedScrollActive =
+      state.mode === "docked" &&
+      now < state.dockedScrollActiveUntil;
+
+    if (dockedScrollActive) {
+      state.dockedScrollIdleBlend = 0;
+    } else {
+      state.dockedScrollIdleBlend +=
+        (1 - state.dockedScrollIdleBlend) *
+        (1 - Math.exp(-tuning.dockedScrollIdleFadeIn * dt));
+    }
+
+    const scrollIdleBlend = state.dockedScrollIdleBlend;
     const motion = reducedMotion.matches ? 0.16 : 1;
     const dockedIdle = state.mode === "docked" && !reducedMotion.matches;
 
     if (dockedIdle && now >= state.idlePulseAt) {
-      const direction = Math.sin(now * 0.0017 + state.idleSeed) >= 0 ? 1 : -1;
-      const emphasis = 0.84 + Math.random() * 0.32;
+      if (dockedScrollActive) {
+        scheduleIdlePulse(now);
+      } else {
+        const direction = Math.sin(now * 0.0017 + state.idleSeed) >= 0 ? 1 : -1;
+        const emphasis = 0.84 + Math.random() * 0.32;
 
-      state.headVelocityX += direction * tuning.idlePulseLateralVelocity * emphasis;
-      state.headVelocityY -=
-        tuning.idlePulseVerticalVelocity * (0.8 + Math.random() * 0.4);
-      state.headAngularVelocity +=
-        direction * tuning.idlePulseAngularVelocity * emphasis;
-      state.idlePulseAt = now + 2800 + Math.random() * 3000;
+        state.headVelocityX += direction * tuning.idlePulseLateralVelocity * emphasis;
+        state.headVelocityY -=
+          tuning.idlePulseVerticalVelocity * (0.8 + Math.random() * 0.4);
+        state.headAngularVelocity +=
+          direction * tuning.idlePulseAngularVelocity * emphasis;
+        scheduleIdlePulse(now);
+      }
     }
 
     const idleForceX = dockedIdle
@@ -1087,19 +1123,27 @@
           Math.sin(now * 0.00073 + state.idleSeed) +
           Math.sin(now * 0.00119 + state.idleSeed * 0.61) * 0.47 +
           Math.sin(now * 0.00031 + state.idleSeed * 1.83) * 0.22
-        ) * tuning.idleImpulseStrength * geometry.unit
+        ) * tuning.idleImpulseStrength * geometry.unit * scrollIdleBlend
       : 0;
     const idleForceY = dockedIdle
       ? (
           Math.sin(now * 0.00091 + state.idleSeed * 1.27) +
           Math.sin(now * 0.00143 + state.idleSeed * 0.42) * 0.35 +
           Math.sin(now * 0.00047 + state.idleSeed * 1.61) * 0.18
-        ) * tuning.idleImpulseStrength * geometry.unit * tuning.idleVerticalForceScale
+        ) *
+          tuning.idleImpulseStrength *
+          geometry.unit *
+          tuning.idleVerticalForceScale *
+          scrollIdleBlend
       : 0;
     const targetX = pointer.x * geometry.unit * 0.32 * looseInfluence * motion;
     const targetY =
       pointer.y * geometry.unit * 0.16 * looseInfluence * motion +
-      scroll * geometry.unit * 0.22 * motion;
+      (
+        state.mode === "docked"
+          ? dockedScroll * geometry.unit * tuning.dockedScrollDisplacement
+          : scroll * geometry.unit * 0.22
+      ) * motion;
     const trailingHeadTilt =
       state.mode === "dragging" && state.grabMode === "base" && !reducedMotion.matches
         ? clamp(
@@ -1144,6 +1188,19 @@
     state.headOffsetX += state.headVelocityX * dt;
     state.headOffsetY += state.headVelocityY * dt;
     state.headRotation += state.headAngularVelocity * dt;
+
+    if (dockedScrollActive) {
+      if (state.dockedScrollDirection < 0 && state.headOffsetY > 0) {
+        state.headOffsetY = 0;
+        state.headVelocityY = Math.min(state.headVelocityY, 0);
+      } else if (state.dockedScrollDirection > 0 && state.headOffsetY < 0) {
+        state.headOffsetY = 0;
+        state.headVelocityY = Math.max(state.headVelocityY, 0);
+      }
+    } else {
+      state.dockedScrollDirection = 0;
+    }
+
     clampHeadState();
 
     return pointer;
@@ -1217,6 +1274,7 @@
     const dt = state.lastFrameAt ? Math.min((now - state.lastFrameAt) / 1000, 1 / 30) : 1 / 60;
     state.lastFrameAt = now;
     state.scrollVelocity *= Math.exp(-6 * dt);
+    state.dockedScrollVelocity *= Math.exp(-6 * dt);
 
     integrateLooseBody(dt);
     const pointer = integrateHead(dt, now);
@@ -1245,7 +1303,46 @@
     const now = performance.now();
     const elapsed = Math.max((now - state.lastScrollAt) / 1000, 0.016);
     const nextY = window.scrollY;
-    state.scrollVelocity = clamp((nextY - state.lastScrollY) / elapsed, -2400, 2400);
+    const scrollDelta = nextY - state.lastScrollY;
+    state.scrollVelocity = clamp(scrollDelta / elapsed, -2400, 2400);
+
+    if (state.mode === "docked" && state.hostVisible && !state.hidden) {
+      const previousDockedVelocity = state.dockedScrollVelocity;
+      const sampleElapsed = Math.min(elapsed, tuning.dockedScrollSampleWindow);
+      state.dockedScrollVelocity = clamp(
+        scrollDelta / sampleElapsed,
+        -2400,
+        2400
+      );
+      const scrollActivity =
+        Math.abs(state.dockedScrollVelocity) / 1400;
+
+      if (scrollActivity >= tuning.dockedScrollActivityThreshold) {
+        state.dockedScrollActiveUntil =
+          now + tuning.dockedScrollActivityHold;
+        state.dockedScrollDirection = Math.sign(scrollDelta);
+        state.dockedScrollIdleBlend = 0;
+        scheduleIdlePulse(now);
+      }
+
+      const motion = reducedMotion.matches ? 0.08 : 1;
+      const impulse = clamp(
+        (
+          state.dockedScrollVelocity -
+          previousDockedVelocity
+        ) * tuning.dockedScrollVelocityCoupling,
+        -tuning.dockedScrollImpulseLimit,
+        tuning.dockedScrollImpulseLimit
+      );
+
+      state.headVelocityY += impulse * motion;
+      clampHeadState();
+    } else {
+      state.dockedScrollVelocity = 0;
+      state.dockedScrollActiveUntil = 0;
+      state.dockedScrollDirection = 0;
+    }
+
     state.lastScrollY = nextY;
     state.lastScrollAt = now;
     requestFrame();

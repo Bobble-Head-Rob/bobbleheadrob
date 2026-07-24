@@ -31,7 +31,7 @@ Interactive mascot prototype complete and ready for final manual and infrastruct
 - Explicit head and base grab modes with direct targeting, preserved visual offsets, and part-specific trailing behavior
 - Attachment-derived spring bending, stretch, compression, and diagonal deformation with bounded displacement
 - Independent bounded tilt for the trailing head or base, with damped reversal overshoot and held-part stability
-- A planted docked base with varied head-led idle motion, occasional stronger bobbles, scroll awareness, and cursor reactions
+- A planted docked base with varied head-led idle motion, velocity-scaled vertical scroll lag, occasional stronger bobbles, and cursor reactions
 - Three subtle, increasingly delayed docked-idle hints with immediate session-scoped suppression after mascot interaction
 - Reduced-motion behavior that preserves eye tracking and direct dragging while suppressing fling and sustained motion
 - Visibility, resize, orientation, and offscreen safeguards that reduce work and keep a loose mascot reachable
@@ -40,7 +40,7 @@ Interactive mascot prototype complete and ready for final manual and infrastruct
 
 - Automated headless-browser checks at 1440px, 768px, 390px, and 320px with no horizontal overflow
 - Mouse-event fling plus synthetic touch-event drag, collision reachability, settle-and-return, and return cancellation
-- Automated resize-while-loose, docked scroll reaction, eye tracking, reduced-motion, and transformed re-grab checks
+- Automated resize-while-loose, directional slow/fast docked scroll reaction, rebound, eye tracking, reduced-motion, and transformed re-grab checks
 - Automated slow and rapid horizontal drag, two-axis and diagonal drag, direction reversal, release overshoot, four-edge collision, automatic return, and docked-idle checks
 - Exact transformed re-grabs in both rotation directions while base scale deformation was active
 - Automated head- and base-driven directional, diagonal, reversal, off-center grab, flick, slow-release, paused-release, and pointer-cancel checks
@@ -55,6 +55,7 @@ Interactive mascot prototype complete and ready for final manual and infrastruct
 
 - Independent visual and interaction review in ordinary desktop and mobile browsers
 - Physical touch-device testing on representative iOS and Android hardware
+- Physical mouse-wheel and trackpad review of docked scroll strength, direction, and post-scroll idle resumption
 - Manual keyboard-only navigation and operating-system reduced-motion review
 - Subjective tuning review for startle intensity, hard impacts, and return timing
 
