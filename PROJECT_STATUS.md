@@ -55,7 +55,7 @@ Interactive mascot prototype complete and ready for final manual and infrastruct
 
 - Independent visual and interaction review in ordinary desktop and mobile browsers
 - Physical touch-device testing on representative iOS and Android hardware
-- Physical mouse-wheel and trackpad review of docked scroll strength, direction, and post-scroll idle resumption
+- Rob's final physical mouse-wheel, trackpad, and mobile scrolling approval of docked scroll strength, rebound feel, and post-scroll idle resumption
 - Manual keyboard-only navigation and operating-system reduced-motion review
 - Subjective tuning review for startle intensity, hard impacts, and return timing
 

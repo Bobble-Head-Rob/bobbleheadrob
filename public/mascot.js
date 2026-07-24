@@ -114,9 +114,12 @@
     idlePulseLateralVelocity: 44,
     idlePulseVerticalVelocity: 24,
     idlePulseAngularVelocity: 32,
-    dockedScrollDisplacement: 0.52,
-    dockedScrollVelocityCoupling: 0.026,
-    dockedScrollImpulseLimit: 64,
+    dockedScrollDisplacement: 2.15,
+    dockedScrollVelocityCoupling: 0.068,
+    dockedScrollImpulseLimit: 112,
+    dockedScrollVelocityLimit: 2400,
+    dockedScrollDisplacementLimit: 14,
+    dockedScrollMinimumUnit: 16,
     dockedScrollActivityThreshold: 0.012,
     dockedScrollActivityHold: 180,
     dockedScrollIdleFadeIn: 5.5,
@@ -1137,11 +1140,15 @@
           scrollIdleBlend
       : 0;
     const targetX = pointer.x * geometry.unit * 0.32 * looseInfluence * motion;
+    const dockedScrollUnit = Math.max(
+      geometry.unit,
+      tuning.dockedScrollMinimumUnit
+    );
     const targetY =
       pointer.y * geometry.unit * 0.16 * looseInfluence * motion +
       (
         state.mode === "docked"
-          ? dockedScroll * geometry.unit * tuning.dockedScrollDisplacement
+          ? dockedScroll * dockedScrollUnit * tuning.dockedScrollDisplacement
           : scroll * geometry.unit * 0.22
       ) * motion;
     const trailingHeadTilt =
@@ -1190,12 +1197,26 @@
     state.headRotation += state.headAngularVelocity * dt;
 
     if (dockedScrollActive) {
+      const scrollDisplacementLimit = tuning.dockedScrollDisplacementLimit;
+
       if (state.dockedScrollDirection < 0 && state.headOffsetY > 0) {
         state.headOffsetY = 0;
         state.headVelocityY = Math.min(state.headVelocityY, 0);
+      } else if (
+        state.dockedScrollDirection < 0 &&
+        state.headOffsetY < -scrollDisplacementLimit
+      ) {
+        state.headOffsetY = -scrollDisplacementLimit;
+        state.headVelocityY = Math.max(state.headVelocityY, 0);
       } else if (state.dockedScrollDirection > 0 && state.headOffsetY < 0) {
         state.headOffsetY = 0;
         state.headVelocityY = Math.max(state.headVelocityY, 0);
+      } else if (
+        state.dockedScrollDirection > 0 &&
+        state.headOffsetY > scrollDisplacementLimit
+      ) {
+        state.headOffsetY = scrollDisplacementLimit;
+        state.headVelocityY = Math.min(state.headVelocityY, 0);
       }
     } else {
       state.dockedScrollDirection = 0;
@@ -1311,8 +1332,8 @@
       const sampleElapsed = Math.min(elapsed, tuning.dockedScrollSampleWindow);
       state.dockedScrollVelocity = clamp(
         scrollDelta / sampleElapsed,
-        -2400,
-        2400
+        -tuning.dockedScrollVelocityLimit,
+        tuning.dockedScrollVelocityLimit
       );
       const scrollActivity =
         Math.abs(state.dockedScrollVelocity) / 1400;
