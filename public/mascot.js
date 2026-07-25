@@ -83,12 +83,13 @@
     hostVisible: true
   };
   const hintPhrases = ["Fling me", "Shake me", "Drop me"];
-  const hintDelays = [6000, 12000, 18000];
-  const hintStorageKey = "bobbleheadrob:mascot-hints";
+  const hintDelays = [1500, 12000, 18000];
+  const hintVisibleDuration = 3000;
   const hintState = {
     index: 0,
-    nextEligibleAt: performance.now() + hintDelays[0],
+    nextEligibleAt: 0,
     visible: false,
+    started: false,
     suppressed: false,
     timer: 0,
     hideTimer: 0
@@ -221,22 +222,6 @@
     state.idlePulseAt = now + 2800 + Math.random() * 3000;
   };
 
-  const readHintSession = () => {
-    try {
-      return window.sessionStorage.getItem(hintStorageKey);
-    } catch {
-      return null;
-    }
-  };
-
-  const writeHintSession = (value) => {
-    try {
-      window.sessionStorage.setItem(hintStorageKey, value);
-    } catch {
-      // The in-memory state still suppresses hints when storage is unavailable.
-    }
-  };
-
   const clearHintTimer = () => {
     if (hintState.timer) {
       window.clearTimeout(hintState.timer);
@@ -259,6 +244,7 @@
 
   const hintsAreEligible = () =>
     Boolean(hint) &&
+    hintState.started &&
     !hintState.suppressed &&
     hintState.index < hintPhrases.length &&
     state.mode === "docked" &&
@@ -300,12 +286,11 @@
 
       if (hintState.index >= hintPhrases.length) {
         hintState.suppressed = true;
-        writeHintSession("completed");
         return;
       }
 
       scheduleHint();
-    }, 3000);
+    }, hintVisibleDuration);
   }
 
   const pauseHints = () => {
@@ -314,7 +299,6 @@
 
     if (hintState.index >= hintPhrases.length) {
       hintState.suppressed = true;
-      writeHintSession("completed");
     }
   };
 
@@ -322,7 +306,31 @@
     hintState.suppressed = true;
     clearHintTimer();
     hideHint();
-    writeHintSession("interacted");
+  };
+
+  const isHistoryNavigation = () => {
+    const [navigationEntry] = performance.getEntriesByType("navigation");
+
+    if (navigationEntry) {
+      return navigationEntry.type === "back_forward";
+    }
+
+    return window.performance.navigation?.type === 2;
+  };
+
+  const startHintSequence = () => {
+    if (hintState.started) {
+      return;
+    }
+
+    if (reducedMotion.matches || isHistoryNavigation()) {
+      hintState.suppressed = true;
+      return;
+    }
+
+    hintState.started = true;
+    hintState.nextEligibleAt = performance.now() + hintDelays[0];
+    scheduleHint();
   };
 
   const updateDockDocumentTarget = () => {
@@ -2121,6 +2129,10 @@
   };
 
   const onMotionPreferenceChange = () => {
+    if (reducedMotion.matches) {
+      suppressHints();
+    }
+
     if (reducedMotion.matches && state.mode === "loose") {
       state.vx = 0;
       state.vy = 0;
@@ -2141,6 +2153,12 @@
   window.addEventListener("resize", onResize, { passive: true });
   window.addEventListener("orientationchange", onResize, { passive: true });
   document.addEventListener("visibilitychange", onVisibilityChange);
+  window.addEventListener("pagehide", suppressHints);
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) {
+      suppressHints();
+    }
+  });
   reducedMotion.addEventListener("change", onMotionPreferenceChange);
 
   if ("IntersectionObserver" in window) {
@@ -2160,7 +2178,10 @@
   }
 
   updateGeometry();
-  hintState.suppressed = Boolean(readHintSession());
-  scheduleHint();
+  if (document.readyState === "complete") {
+    startHintSequence();
+  } else {
+    window.addEventListener("load", startHintSequence, { once: true });
+  }
   requestFrame();
 })();
