@@ -11,7 +11,7 @@ Interactive mascot prototype complete and ready for final manual and infrastruct
 | Project | Status | Destination |
 | --- | --- | --- |
 | Guitar Key Compass | Live | <https://guitar.bobbleheadrob.com/> |
-| Left Right Center | Coming soon | None assigned |
+| Camp Dice | Coming soon | None assigned |
 
 ### Implementation
 
@@ -77,7 +77,7 @@ The current physics tuning gives secondary head motion more personality while ke
 - Keep the homepage focused on projects, with concise Rob attribution
 - Acknowledge the small team of agents without making the agents the focus
 - Keep contact limited to the approved public email address; do not add forms or social links
-- Keep the Left Right Center description brief until launch
+- Keep the Camp Dice description brief until launch
 
 ## Pre-release checklist
 
@@ -95,5 +95,5 @@ The current physics tuning gives secondary head motion more personality while ke
 ## Not done by design
 
 - No deployment performed as part of this work
-- No speculative URL for Left Right Center
+- No speculative URL for Camp Dice
 - No analytics or visitor tracking
