@@ -18,7 +18,7 @@ The interface pairs warmth with software precision. It should feel credible firs
 ## Page hierarchy
 
 1. The hero establishes identity and tone.
-2. The project shelf gives the live project visual priority while keeping the coming-soon project credible.
+2. The project shelf gives personal work visual priority while presenting company-owned work concisely and honestly.
 3. The personal note thanks visitors without turning the homepage into a biography.
 4. A lightweight contact section provides one direct email address.
 5. The footer closes with a compact brand repeat and current year.
@@ -45,7 +45,7 @@ A small thought bubble introduces the mascot with three increasingly delayed pro
 - Text and controls use high-contrast foreground colors.
 - Decorative objects are hidden from assistive technology.
 - `prefers-reduced-motion` removes sustained idle, startle, fling, and impact motion while preserving eye tracking and direct dragging.
-- Navigation uses actual links and the coming-soon project is not presented as interactive.
+- Navigation and available project destinations use ordinary semantic links.
 - The mascot is decorative, hidden from assistive technology, and excluded from the keyboard focus order.
 
 ## Approved identity
@@ -53,5 +53,6 @@ A small thought bubble introduces the mascot with three increasingly delayed pro
 - The main brand is simply BobbleheadRob.
 - The existing mark and lime, coral, and blue palette remain in use.
 - The homepage stays focused on projects rather than personal biography.
-- Copy uses “Rob,” acknowledges the small team of agents, and avoids implying solo authorship.
+- Copy uses “Rob” and centers the workshop’s purpose rather than its implementation process.
+- Disdained EGG appears only where ownership or the workshop-to-company relationship needs to be clear; it does not enter the primary navigation or dominate the hero.
 - Basic contact is limited to the public email address; forms, social links, support promises, and additional contact channels remain out of scope.

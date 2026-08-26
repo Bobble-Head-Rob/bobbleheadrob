@@ -2,9 +2,11 @@
 
 ## Purpose
 
-BobbleheadRob is the body of work shaped by Rob and built with a small team of agents: a durable home for useful tools, small games, and whatever seems worth building next.
+BobbleheadRob is Rob’s personal workshop and shelf: a durable home for useful tools, small games, experiments, odd ideas, and whatever seems worth building next. Projects may remain small and personal without needing to meet company-product expectations.
 
-It is intentionally distinct from Whittleware. BobbleheadRob is project-focused, independent, and allowed to be a little odd around the edges. The work should feel dependable and thoughtfully finished.
+It is intentionally distinct from Disdained EGG. BobbleheadRob is not a company staging server, unfinished-company site, generic portfolio, or lower-quality company mirror. Disdained EGG is the home for selected work deliberately carried forward as products the company intends to finish, release, own, support, and stand behind.
+
+Some BobbleheadRob experiments may grow into Disdained EGG products. Not every experiment should or needs to graduate.
 
 ## Audience
 
@@ -14,7 +16,16 @@ It is intentionally distinct from Whittleware. BobbleheadRob is project-focused,
 
 ## Product promise
 
-Every listed project should be understandable at a glance, easy to open, and honest about its availability. Live things go somewhere real. Unreleased things are clearly labeled and never linked to invented destinations.
+Every listed project should be understandable at a glance, easy to open, and honest about its availability and ownership. Live things go somewhere real. Unreleased things are clearly labeled and never linked to invented destinations. Company products link to their authoritative Disdained EGG home rather than being duplicated here.
+
+## Project lifecycle
+
+- **Experiment:** something being tried or explored.
+- **Live personal project:** a useful finished or usable project that belongs naturally on BobbleheadRob.
+- **Graduated:** a project that has become an official Disdained EGG product. Its authoritative product home moves to Disdained EGG; BobbleheadRob may retain a concise historical or personal entry with a direct link.
+- **Archived:** a retired or historical project retained when useful.
+
+Camp Dice is the first current example of a graduated company product. Graduation is optional, and BobbleheadRob must not duplicate the company product page.
 
 ## Principles
 
@@ -28,6 +39,6 @@ Every listed project should be understandable at a glance, easy to open, and hon
 
 - The root domain gives every BobbleheadRob project a credible shared home.
 - Guitar Key Compass is immediately discoverable.
-- Camp Dice has a clear place in the collection without suggesting it is available early.
+- Camp Dice is clearly attributed and linked to its authoritative Disdained EGG product home.
 - Visitors can reach Rob through one clear public email address.
 - Adding the next project is straightforward and visually consistent.

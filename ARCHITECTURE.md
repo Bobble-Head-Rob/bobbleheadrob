@@ -16,7 +16,7 @@ BobbleheadRob is a dependency-free static website. A browser requests HTML, CSS,
 
 ## Runtime model
 
-The page remains complete if JavaScript fails or is disabled. There are no runtime network calls, cookies, local storage, analytics, third-party fonts, or external assets. Session storage records only whether the current tab session has completed or dismissed the mascot hints.
+The page remains complete if JavaScript fails or is disabled. The authored source makes no runtime network calls, sets no cookies, uses no local storage, integrates no analytics, and loads no third-party fonts or external assets. Session storage records only whether the current tab session has completed or dismissed the mascot hints. Production is reported to inject Cloudflare Web Analytics, so production tracking behavior remains unresolved pending a separate infrastructure audit.
 
 ## Mascot runtime
 
@@ -48,20 +48,29 @@ This code is a homepage-specific interaction prototype. A future **Fling Pet** p
 
 - Production canonical: `https://bobbleheadrob.com/`
 - Project links use canonical HTTPS destinations.
+- Graduated company products link to their authoritative Disdained EGG product home with ordinary HTML anchors.
 - Unreleased projects do not receive speculative URLs.
 - Internal page and asset references are root-relative to match the production domain.
 - The root sitemap lists only URLs hosted on `bobbleheadrob.com`; subdomains own their sitemap entries.
 
 ## Hosting
 
-The `public` directory is the Cloudflare Pages build output directory. It contains only files intended for production hosting; repository-level planning and architecture documents remain outside it. No build command or platform-specific generation step is required.
+The `public` directory contains only files intended for production hosting; repository-level planning and architecture documents remain outside it. `wrangler.jsonc` declares `public` as a static asset directory, but the production Cloudflare deployment mechanism is not yet proven. Cloudflare Pages, Cloudflare Workers, and automatic GitHub deployment must not be treated as settled facts.
+
+The production analytics injection, duplicate apex/`www` content, empty 404 response, and unavailable local Wrangler command are also unresolved. They require a separately authorized infrastructure audit; source/content work must not silently change or overstate them.
+
+## Project ownership and lifecycle
+
+Classify shelf entries as Experiment, Live personal project, Graduated, or Archived. The labels are governance concepts and need not all appear in the public UI.
+
+Graduation means Disdained EGG has taken ownership of a project as a company product and the authoritative product home moves there. BobbleheadRob may retain a concise personal or historical shelf entry with a normal crawlable link, but it must not reproduce the company product page. Camp Dice is the first current example. Not every experiment is expected to graduate.
 
 ## Adding a project
 
 1. Add a semantic `article` to the project grid in `public/index.html`.
-2. Use a real anchor only when the project destination exists.
-3. Add a project-specific class or symbol style in `public/styles.css` when useful.
-4. Add a URL to `public/sitemap.xml` only when it is hosted on `bobbleheadrob.com`.
-5. Update `PROJECT_STATUS.md`.
+2. Record its lifecycle and ownership in `PROJECT_STATUS.md`.
+3. Use a real anchor only when the project destination exists; graduated entries should link to the authoritative company page.
+4. Add a project-specific class or symbol style in `public/styles.css` when useful.
+5. Add a URL to `public/sitemap.xml` only when it is hosted on `bobbleheadrob.com`.
 
 As the collection grows, repeated project data may justify a build step. That tradeoff should be reconsidered only when manual HTML becomes error-prone; it is deliberately unnecessary now.

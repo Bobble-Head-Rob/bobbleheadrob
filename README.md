@@ -1,6 +1,6 @@
 # BobbleheadRob
 
-The root landing page for [bobbleheadrob.com](https://bobbleheadrob.com/), a project-focused collection of useful tools and small games shaped by Rob and built with a small team of agents.
+The root landing page for [bobbleheadrob.com](https://bobbleheadrob.com/), Rob’s personal workshop for useful tools, small games, experiments, and odd ideas. Some projects stay personal; selected work may grow into products owned and supported by [Disdained EGG](https://disdainedegg.com/).
 
 The homepage also provides the public contact address `rob@bobbleheadrob.com` for bug reports, ideas, and general messages.
 
@@ -28,15 +28,11 @@ The hero bobblehead is an optional interactive flourish:
 
 The mascot remains decorative, is hidden from assistive technology, and is not part of the keyboard navigation path. The homepage implementation is a focused prototype for the brand character, not the separate, more game-like **Fling Pet** concept.
 
-## Deployment
+## Hosting context
 
-The repository is ready for a static Cloudflare Pages project:
+The dependency-free `public` directory contains the deployable site. `wrangler.jsonc` declares that directory as a static asset source, but the actual Cloudflare deployment path is not yet established in this repository.
 
-- Framework preset: None
-- Build command: leave blank
-- Build output directory: `public`
-
-Deployment is intentionally not configured or performed in this scaffold.
+A separate infrastructure audit must determine the production deployment mechanism, injected Cloudflare Web Analytics, apex/`www` behavior, the empty production 404 response, and local Wrangler availability. Do not assume Cloudflare Pages, Cloudflare Workers, or automatic GitHub deployment until that audit supplies evidence.
 
 ## Files
 
@@ -49,4 +45,5 @@ Deployment is intentionally not configured or performed in this scaffold.
 - `DESIGN.md` — visual language and interaction guidance
 - `ARCHITECTURE.md` — technical structure and constraints
 - `PROJECT_STATUS.md` — current state and next decisions
+- `AGENTS.md` — development workflow and cross-property guardrails
 - `public/robots.txt` and `public/sitemap.xml` — crawler guidance and discovery

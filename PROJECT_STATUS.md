@@ -1,17 +1,17 @@
 # Project Status
 
-Last reviewed: 2026-07-24
+Last reviewed: 2026-08-26
 
 ## Current release
 
-Interactive mascot prototype complete and ready for final manual and infrastructure verification.
+Workshop identity, project ownership, and cross-property source pass complete locally. The interactive mascot remains ready for final manual and infrastructure verification. No deployment was performed.
 
 ### Included projects
 
-| Project | Status | Destination |
+| Project | Lifecycle / ownership | Destination |
 | --- | --- | --- |
-| Guitar Key Compass | Live | <https://guitar.bobbleheadrob.com/> |
-| Camp Dice | Coming soon | None assigned |
+| Guitar Key Compass | Live personal project | <https://guitar.bobbleheadrob.com/> |
+| Camp Dice | Graduated / Disdained EGG product | <https://disdainedegg.com/camp-dice/> |
 
 ### Implementation
 
@@ -21,8 +21,9 @@ Interactive mascot prototype complete and ready for final manual and infrastruct
 - Canonical, description, Open Graph and Twitter card fields, and WebSite JSON-LD
 - Same-host search crawler files, favicon, and original social preview image
 - Dedicated `public` deployment directory with planning documents excluded
-- No external requests, analytics, forms, or tracking
-- Project-first identity copy reflecting work shaped by Rob and built with a small team of agents
+- No external asset requests, analytics integration, forms, or tracking in the authored source; production analytics injection remains unresolved
+- Workshop identity copy that distinguishes BobbleheadRob from Disdained EGG without making the company relationship dominant
+- Crawlable links to the Disdained EGG homepage and authoritative Camp Dice product home
 - A brief personal note near the bottom of the homepage
 - A lightweight contact section linking to `rob@bobbleheadrob.com`
 - Pointer-aware, draggable hero mascot with capped fling physics, viewport collisions, impact response, and automatic return
@@ -75,9 +76,10 @@ The current physics tuning gives secondary head motion more personality while ke
 
 - Preserve the existing identity mark and lime, coral, and blue palette
 - Keep the homepage focused on projects, with concise Rob attribution
-- Acknowledge the small team of agents without making the agents the focus
+- Keep BobbleheadRob distinct from Disdained EGG in purpose, ownership, and presentation
 - Keep contact limited to the approved public email address; do not add forms or social links
-- Keep the Camp Dice description brief until launch
+- Keep graduated product entries concise and send visitors to the authoritative company home
+- Keep Guitar Key Compass a BobbleheadRob personal tool
 
 ## Pre-release checklist
 
@@ -87,13 +89,17 @@ The current physics tuning gives secondary head motion more personality while ke
 - [ ] Confirm a clean browser console on initial load and navigation
 - [ ] Validate the Open Graph and Twitter social preview in production-facing tools
 - [ ] Validate that the sitemap contains only canonical `bobbleheadrob.com` URLs
-- [ ] Confirm the deployed file scope matches the contents of `public`
-- [ ] Confirm apex-domain and `www` redirect/canonical behavior
-- [ ] Confirm DNS records and Cloudflare proxy status
+- [ ] Determine the actual Cloudflare deployment path; do not assume Pages, Workers, or automatic GitHub deployment
+- [ ] Reconcile production-injected Cloudflare Web Analytics with source documentation and policy
+- [ ] Decide and verify apex/`www` redirect behavior; production currently serves duplicate content
+- [ ] Replace or diagnose the empty production 404 response
+- [ ] Establish Wrangler availability and the approved Mac deployment workflow
+- [ ] Confirm DNS records and Cloudflare proxy status in the separate infrastructure audit
 - [ ] Recheck production page, asset, and Guitar Key Compass links
 
 ## Not done by design
 
 - No deployment performed as part of this work
-- No speculative URL for Camp Dice
-- No analytics or visitor tracking
+- No hosting, DNS, domain, analytics, or Cloudflare configuration changes
+- No local Camp Dice product page or duplicated company product content
+- No changes to Guitar Key Compass or the Disdained EGG repository
