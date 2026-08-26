@@ -7,6 +7,7 @@ BobbleheadRob is a dependency-free static website. A browser requests HTML, CSS,
 ## File responsibilities
 
 - `public/index.html` owns content, semantics, links, metadata, and structured data.
+- `public/404.html` owns the concise branded missing-page experience and recovery links.
 - `public/styles.css` owns the layout, design tokens, responsive rules, illustrations, focus states, and reduced-motion behavior.
 - `public/app.js` performs one nonessential enhancement: keeping the footer year current.
 - `public/mascot.js` contains the optional mascot input, physics state, and animation rendering.
@@ -57,9 +58,9 @@ This code is a homepage-specific interaction prototype. A future **Fling Pet** p
 
 ## Hosting
 
-The `public` directory contains only files intended for production hosting; repository-level planning and architecture documents remain outside it. `wrangler.jsonc` declares `public` as a static asset directory, but the production Cloudflare deployment mechanism is not yet proven. Cloudflare Pages, Cloudflare Workers, and automatic GitHub deployment must not be treated as settled facts.
+The `public` directory contains only files intended for production hosting; repository-level planning and architecture documents remain outside it. Production uses Cloudflare Workers Static Assets, with `wrangler.jsonc` declaring `./public` as the asset directory. Workers Static Assets owns branded missing-page handling: `assets.not_found_handling` is `"404-page"`, so unmatched routes retain an HTTP 404 status while serving `public/404.html`.
 
-The production analytics state is settled above. Duplicate apex/`www` content, the empty 404 response, and the approved local Wrangler and deployment workflow remain unresolved. They require separately authorized infrastructure work; source/content work must not silently change or overstate them.
+GitHub-integrated Cloudflare Workers Builds deploys the `bobbleheadrob` service automatically when `main` is pushed. The approved production workflow is `local work → review → commit → owner approval → push main → Cloudflare Workers Builds auto-deploy → production verification`. A push to `main` is therefore production-affecting and requires explicit owner approval. Duplicate apex/`www` content remains a separate infrastructure concern; source/content work must not silently change it.
 
 ## Project ownership and lifecycle
 

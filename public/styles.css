@@ -200,6 +200,61 @@ h2 em {
   transform: translateY(-2px);
 }
 
+.error-page {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100svh;
+  flex-direction: column;
+}
+
+.error-page main {
+  display: grid;
+  flex: 1;
+}
+
+.error-hero {
+  width: 100%;
+}
+
+.error-hero h1 {
+  max-width: 10ch;
+  font-size: clamp(3rem, 9vw, 6.7rem);
+}
+
+.error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.error-actions .button {
+  white-space: nowrap;
+}
+
+.error-shelf-link {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.3em;
+  transition: color 160ms ease;
+}
+
+.error-shelf-link:hover,
+.error-shelf-link:focus-visible {
+  color: var(--ink);
+}
+
+.error-object {
+  pointer-events: none;
+}
+
+.error-object .bobble {
+  cursor: default;
+  will-change: auto;
+}
+
 .hero-object {
   position: relative;
   display: grid;
@@ -720,6 +775,16 @@ footer p {
 }
 
 @media (max-width: 47.999rem) {
+  .error-hero {
+    padding-block: clamp(2.5rem, 9vw, 4rem);
+  }
+
+  .error-actions {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
   .hero-object {
     width: 21em;
     margin-block: 1.5rem 0.5rem;

@@ -16,6 +16,8 @@ Then open `http://localhost:8080/`.
 
 Opening `public/index.html` directly will display the page, but a local server is preferred because production assets use root-relative URLs.
 
+Use Wrangler local development when checking the branded missing-page behavior; a generic static server does not reproduce Workers Static Assets 404 routing.
+
 ## Mascot controls
 
 The hero bobblehead is an optional interactive flourish:
@@ -30,13 +32,16 @@ The mascot remains decorative, is hidden from assistive technology, and is not p
 
 ## Hosting context
 
-The dependency-free `public` directory contains the deployable site. `wrangler.jsonc` declares that directory as a static asset source, but the actual Cloudflare deployment path is not yet established in this repository.
+The dependency-free `public` directory contains the deployable site. Production is the `bobbleheadrob` Cloudflare Workers service using Workers Static Assets, with `wrangler.jsonc` declaring `./public` as the asset source and `public/404.html` as the branded missing-page body through `not_found_handling: "404-page"`.
 
-Cloudflare Web Analytics is enabled for `bobbleheadrob.com` through Cloudflare-managed Automatic Setup for aggregate website traffic measurement. The authored site contains no custom analytics code and does not include Google Analytics or another separate analytics stack. The production deployment mechanism, apex/`www` behavior, empty production 404 response, and approved local deployment workflow remain separate infrastructure questions; do not assume Cloudflare Pages, Cloudflare Workers, or automatic GitHub deployment until current evidence establishes them.
+Cloudflare Web Analytics is enabled for `bobbleheadrob.com` through Cloudflare-managed Automatic Setup for aggregate website traffic measurement. The authored site contains no custom analytics code and does not include Google Analytics or another separate analytics stack.
+
+Cloudflare Workers Builds is integrated with GitHub and automatically deploys production when `main` is pushed. The approved flow is local work, review, commit, owner approval, push `main`, automatic Workers deployment, and production verification. A push to `main` is production-affecting and must not happen without explicit owner approval. Apex/`www` behavior remains a separate infrastructure question.
 
 ## Files
 
 - `public/index.html` — semantic page markup and metadata
+- `public/404.html` — branded missing-page content and recovery links
 - `public/styles.css` — responsive visual system and layout
 - `public/app.js` — footer-year progressive enhancement
 - `public/mascot.js` — isolated mascot input, physics, and rendering

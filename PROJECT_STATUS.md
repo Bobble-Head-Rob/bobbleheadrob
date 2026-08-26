@@ -4,7 +4,7 @@ Last reviewed: 2026-08-26
 
 ## Current release
 
-Workshop identity, project ownership, and cross-property source pass complete locally. The interactive mascot remains ready for final manual and infrastructure verification. No deployment was performed.
+Workshop identity, project ownership, cross-property source work, and the branded Workers Static Assets 404 are complete locally. The interactive mascot remains ready for final manual verification. No deployment was performed.
 
 ### Included projects
 
@@ -28,6 +28,7 @@ Workshop identity, project ownership, and cross-property source pass complete lo
 - Canonical, description, Open Graph and Twitter card fields, and WebSite JSON-LD
 - Same-host search crawler files, favicon, and original social preview image
 - Dedicated `public` deployment directory with planning documents excluded
+- Branded `public/404.html` recovery page served with a real HTTP 404 through Workers Static Assets `not_found_handling`
 - No external asset requests, custom analytics integration, forms, or tracking in the authored source; production aggregate measurement is Cloudflare-managed through Web Analytics Automatic Setup
 - Workshop identity copy that distinguishes BobbleheadRob from Disdained EGG without making the company relationship dominant
 - Crawlable links to the Disdained EGG homepage and authoritative Camp Dice product home
@@ -96,16 +97,15 @@ The current physics tuning gives secondary head motion more personality while ke
 - [ ] Confirm a clean browser console on initial load and navigation
 - [ ] Validate the Open Graph and Twitter social preview in production-facing tools
 - [ ] Validate that the sitemap contains only canonical `bobbleheadrob.com` URLs
-- [ ] Determine the actual Cloudflare deployment path; do not assume Pages, Workers, or automatic GitHub deployment
 - [ ] Decide and verify apex/`www` redirect behavior; production currently serves duplicate content
-- [ ] Replace or diagnose the empty production 404 response
-- [ ] Establish Wrangler availability and the approved Mac deployment workflow
+- [ ] After owner approval, push `main` for automatic Cloudflare Workers Builds deployment and verify the branded 404 in production
 - [ ] Confirm DNS records and Cloudflare proxy status in the separate infrastructure audit
 - [ ] Recheck production page, asset, and Guitar Key Compass links
 
 ## Not done by design
 
 - No deployment performed as part of this work
-- No hosting, DNS, domain, analytics, or Cloudflare configuration changes
+- No live hosting, DNS, domain, analytics, or Cloudflare account configuration changes
+- Production uses GitHub-integrated Cloudflare Workers Builds; pushing `main` is production-affecting and requires owner approval
 - No local Camp Dice product page or duplicated company product content
 - No changes to Guitar Key Compass or the Disdained EGG repository
