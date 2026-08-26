@@ -13,6 +13,13 @@ Workshop identity, project ownership, and cross-property source pass complete lo
 | Guitar Key Compass | Live personal project | <https://guitar.bobbleheadrob.com/> |
 | Camp Dice | Graduated / Disdained EGG product | <https://disdainedegg.com/camp-dice/> |
 
+### Analytics
+
+- Cloudflare Web Analytics is intentionally enabled with Automatic Setup for aggregate website traffic measurement, and historical baseline data already exists.
+- Current strategic use is to compare pre-launch, launch-week, and post-launch traffic; understand BobbleheadRob discovery; follow page/path and referrer trends; and observe referrals to Disdained EGG around the Camp Dice launch.
+- The repository contains no custom application analytics library. `public/app.js` and `public/mascot.js` implement site behavior, Cloudflare security/challenge scripts are separate from Web Analytics, and no Google Analytics or additional analytics stack is authored here.
+- This aggregate measurement does not represent user-level tracking, custom conversion events, outbound-click tracking, cross-site identity, or exact individual journeys. Future agents must not remove or replace Cloudflare Web Analytics merely because analytics code is absent from the repository.
+
 ### Implementation
 
 - Dependency-free HTML, CSS, and JavaScript
@@ -21,7 +28,7 @@ Workshop identity, project ownership, and cross-property source pass complete lo
 - Canonical, description, Open Graph and Twitter card fields, and WebSite JSON-LD
 - Same-host search crawler files, favicon, and original social preview image
 - Dedicated `public` deployment directory with planning documents excluded
-- No external asset requests, analytics integration, forms, or tracking in the authored source; production analytics injection remains unresolved
+- No external asset requests, custom analytics integration, forms, or tracking in the authored source; production aggregate measurement is Cloudflare-managed through Web Analytics Automatic Setup
 - Workshop identity copy that distinguishes BobbleheadRob from Disdained EGG without making the company relationship dominant
 - Crawlable links to the Disdained EGG homepage and authoritative Camp Dice product home
 - A brief personal note near the bottom of the homepage
@@ -90,7 +97,6 @@ The current physics tuning gives secondary head motion more personality while ke
 - [ ] Validate the Open Graph and Twitter social preview in production-facing tools
 - [ ] Validate that the sitemap contains only canonical `bobbleheadrob.com` URLs
 - [ ] Determine the actual Cloudflare deployment path; do not assume Pages, Workers, or automatic GitHub deployment
-- [ ] Reconcile production-injected Cloudflare Web Analytics with source documentation and policy
 - [ ] Decide and verify apex/`www` redirect behavior; production currently serves duplicate content
 - [ ] Replace or diagnose the empty production 404 response
 - [ ] Establish Wrangler availability and the approved Mac deployment workflow

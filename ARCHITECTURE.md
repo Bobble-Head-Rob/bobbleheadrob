@@ -16,7 +16,9 @@ BobbleheadRob is a dependency-free static website. A browser requests HTML, CSS,
 
 ## Runtime model
 
-The page remains complete if JavaScript fails or is disabled. The authored source makes no runtime network calls, sets no cookies, uses no local storage, integrates no analytics, and loads no third-party fonts or external assets. Session storage records only whether the current tab session has completed or dismissed the mascot hints. Production is reported to inject Cloudflare Web Analytics, so production tracking behavior remains unresolved pending a separate infrastructure audit.
+The page remains complete if JavaScript fails or is disabled. The authored source makes no runtime network calls, sets no cookies, uses no local storage, integrates no custom application analytics, and loads no third-party fonts or external assets. Session storage records only whether the current tab session has completed or dismissed the mascot hints.
+
+Production uses Cloudflare Web Analytics with Automatic Setup for aggregate website traffic measurement. Cloudflare manages the production measurement at the platform layer; no analytics library or transport is authored in this repository. `public/app.js` and `public/mascot.js` implement site behavior, not analytics transport, and Cloudflare security or challenge scripts are distinct from Web Analytics. The authored site does not include Google Analytics or another separate analytics stack. Future source work must not remove or replace the Cloudflare-managed analytics configuration merely because the beacon is absent from repository files.
 
 ## Mascot runtime
 
@@ -57,7 +59,7 @@ This code is a homepage-specific interaction prototype. A future **Fling Pet** p
 
 The `public` directory contains only files intended for production hosting; repository-level planning and architecture documents remain outside it. `wrangler.jsonc` declares `public` as a static asset directory, but the production Cloudflare deployment mechanism is not yet proven. Cloudflare Pages, Cloudflare Workers, and automatic GitHub deployment must not be treated as settled facts.
 
-The production analytics injection, duplicate apex/`www` content, empty 404 response, and unavailable local Wrangler command are also unresolved. They require a separately authorized infrastructure audit; source/content work must not silently change or overstate them.
+The production analytics state is settled above. Duplicate apex/`www` content, the empty 404 response, and the approved local Wrangler and deployment workflow remain unresolved. They require separately authorized infrastructure work; source/content work must not silently change or overstate them.
 
 ## Project ownership and lifecycle
 

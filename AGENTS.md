@@ -24,4 +24,6 @@ BobbleheadRob is Rob’s personal workshop for useful tools, small games, experi
 
 Use the lifecycle in `VISION.md`: Experiment, Live personal project, Graduated, and Archived. Not every experiment should graduate. When one does, its authoritative product home moves to Disdained EGG; BobbleheadRob may keep a concise entry and crawlable link but must not duplicate the company page. Camp Dice is the first current example.
 
-Infrastructure facts remain unsettled. Do not claim Cloudflare Pages, Cloudflare Workers, automatic GitHub deployment, or no production analytics without current evidence; see `ARCHITECTURE.md` and `PROJECT_STATUS.md`.
+Hosting and deployment facts remain unsettled. Do not claim Cloudflare Pages, Cloudflare Workers, or automatic GitHub deployment without current evidence; see `ARCHITECTURE.md` and `PROJECT_STATUS.md`.
+
+Production analytics is settled: BobbleheadRob uses Cloudflare Web Analytics with Automatic Setup for aggregate website traffic measurement. The repository intentionally contains no custom application analytics library. Future agents must not remove or replace Cloudflare Web Analytics merely because analytics code is absent from the repository; any analytics configuration change requires separate explicit authorization.

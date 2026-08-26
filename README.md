@@ -32,7 +32,7 @@ The mascot remains decorative, is hidden from assistive technology, and is not p
 
 The dependency-free `public` directory contains the deployable site. `wrangler.jsonc` declares that directory as a static asset source, but the actual Cloudflare deployment path is not yet established in this repository.
 
-A separate infrastructure audit must determine the production deployment mechanism, injected Cloudflare Web Analytics, apex/`www` behavior, the empty production 404 response, and local Wrangler availability. Do not assume Cloudflare Pages, Cloudflare Workers, or automatic GitHub deployment until that audit supplies evidence.
+Cloudflare Web Analytics is enabled for `bobbleheadrob.com` through Cloudflare-managed Automatic Setup for aggregate website traffic measurement. The authored site contains no custom analytics code and does not include Google Analytics or another separate analytics stack. The production deployment mechanism, apex/`www` behavior, empty production 404 response, and approved local deployment workflow remain separate infrastructure questions; do not assume Cloudflare Pages, Cloudflare Workers, or automatic GitHub deployment until current evidence establishes them.
 
 ## Files
 
