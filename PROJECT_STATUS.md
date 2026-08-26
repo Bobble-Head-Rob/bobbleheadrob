@@ -4,7 +4,7 @@ Last reviewed: 2026-08-26
 
 ## Current release
 
-Workshop identity, project ownership, cross-property source work, and the branded Workers Static Assets 404 are complete locally. The interactive mascot remains ready for final manual verification. No deployment was performed.
+Workshop identity, project ownership, cross-property source work, and the branded Workers Static Assets 404 are deployed. The canonical apex host and Cloudflare-managed WWW normalization are verified in production. The interactive mascot remains ready for final manual verification.
 
 ### Included projects
 
@@ -29,6 +29,7 @@ Workshop identity, project ownership, cross-property source work, and the brande
 - Same-host search crawler files, favicon, and original social preview image
 - Dedicated `public` deployment directory with planning documents excluded
 - Branded `public/404.html` recovery page served with a real HTTP 404 through Workers Static Assets `not_found_handling`
+- Canonical `https://bobbleheadrob.com` host with the dashboard-managed Cloudflare `WWW to apex` rule permanently normalizing HTTP and HTTPS WWW requests in one hop while preserving path and query string
 - No external asset requests, custom analytics integration, forms, or tracking in the authored source; production aggregate measurement is Cloudflare-managed through Web Analytics Automatic Setup
 - Workshop identity copy that distinguishes BobbleheadRob from Disdained EGG without making the company relationship dominant
 - Crawlable links to the Disdained EGG homepage and authoritative Camp Dice product home
@@ -97,15 +98,16 @@ The current physics tuning gives secondary head motion more personality while ke
 - [ ] Confirm a clean browser console on initial load and navigation
 - [ ] Validate the Open Graph and Twitter social preview in production-facing tools
 - [ ] Validate that the sitemap contains only canonical `bobbleheadrob.com` URLs
-- [ ] Decide and verify apex/`www` redirect behavior; production currently serves duplicate content
+- [x] Verify canonical-host normalization; Cloudflare redirects HTTP and HTTPS `www` requests directly to the HTTPS apex with a path- and query-preserving 301
 - [ ] After owner approval, push `main` for automatic Cloudflare Workers Builds deployment and verify the branded 404 in production
 - [ ] Confirm DNS records and Cloudflare proxy status in the separate infrastructure audit
 - [ ] Recheck production page, asset, and Guitar Key Compass links
 
 ## Not done by design
 
-- No deployment performed as part of this work
+- No manual deployment; production changes flow through the approved GitHub-integrated Workers Builds workflow
 - No live hosting, DNS, domain, analytics, or Cloudflare account configuration changes
 - Production uses GitHub-integrated Cloudflare Workers Builds; pushing `main` is production-affecting and requires owner approval
+- Dashboard-only infrastructure such as the `WWW to apex` redirect is documented separately because Git alone does not reproduce it; do not duplicate that redirect in Worker or application code unless the architecture intentionally changes
 - No local Camp Dice product page or duplicated company product content
 - No changes to Guitar Key Compass or the Disdained EGG repository

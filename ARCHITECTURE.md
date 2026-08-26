@@ -50,6 +50,7 @@ This code is a homepage-specific interaction prototype. A future **Fling Pet** p
 ## URL policy
 
 - Production canonical: `https://bobbleheadrob.com/`
+- `www.bobbleheadrob.com` is not a content host; Cloudflare normalizes it to the HTTPS apex with a permanent redirect.
 - Project links use canonical HTTPS destinations.
 - Graduated company products link to their authoritative Disdained EGG product home with ordinary HTML anchors.
 - Unreleased projects do not receive speculative URLs.
@@ -60,7 +61,9 @@ This code is a homepage-specific interaction prototype. A future **Fling Pet** p
 
 The `public` directory contains only files intended for production hosting; repository-level planning and architecture documents remain outside it. Production uses Cloudflare Workers Static Assets, with `wrangler.jsonc` declaring `./public` as the asset directory. Workers Static Assets owns branded missing-page handling: `assets.not_found_handling` is `"404-page"`, so unmatched routes retain an HTTP 404 status while serving `public/404.html`.
 
-GitHub-integrated Cloudflare Workers Builds deploys the `bobbleheadrob` service automatically when `main` is pushed. The approved production workflow is `local work → review → commit → owner approval → push main → Cloudflare Workers Builds auto-deploy → production verification`. A push to `main` is therefore production-affecting and requires explicit owner approval. Duplicate apex/`www` content remains a separate infrastructure concern; source/content work must not silently change it.
+GitHub-integrated Cloudflare Workers Builds deploys the `bobbleheadrob` service automatically when `main` is pushed. The approved production workflow is `local work → review → commit → owner approval → push main → Cloudflare Workers Builds auto-deploy → production verification`. A push to `main` is therefore production-affecting and requires explicit owner approval.
+
+The Cloudflare zone-level redirect rule `WWW to apex` covers HTTP and HTTPS requests for `www.bobbleheadrob.com`, returning a permanent 301 directly to `https://bobbleheadrob.com` in one hop while preserving the request path and query string. The rule is dashboard-managed infrastructure and is not represented in `wrangler.jsonc`. Do not recreate WWW normalization inside Worker or application code unless the deployment architecture is intentionally changed. Dashboard-only infrastructure changes require separate durable documentation because the Git repository alone cannot reproduce them.
 
 ## Project ownership and lifecycle
 

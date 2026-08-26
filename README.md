@@ -36,7 +36,9 @@ The dependency-free `public` directory contains the deployable site. Production 
 
 Cloudflare Web Analytics is enabled for `bobbleheadrob.com` through Cloudflare-managed Automatic Setup for aggregate website traffic measurement. The authored site contains no custom analytics code and does not include Google Analytics or another separate analytics stack.
 
-Cloudflare Workers Builds is integrated with GitHub and automatically deploys production when `main` is pushed. The approved flow is local work, review, commit, owner approval, push `main`, automatic Workers deployment, and production verification. A push to `main` is production-affecting and must not happen without explicit owner approval. Apex/`www` behavior remains a separate infrastructure question.
+Cloudflare Workers Builds is integrated with GitHub and automatically deploys production when `main` is pushed. The approved flow is local work, review, commit, owner approval, push `main`, automatic Workers deployment, and production verification. A push to `main` is production-affecting and must not happen without explicit owner approval.
+
+The canonical public host is `https://bobbleheadrob.com`. The Cloudflare zone-level redirect rule `WWW to apex` permanently redirects both HTTP and HTTPS requests for `www.bobbleheadrob.com` directly to the HTTPS apex in one hop while preserving path and query string. This dashboard-managed rule is not represented in `wrangler.jsonc`; future work must not recreate it in Worker or application code unless the deployment architecture is intentionally changed. Dashboard-only infrastructure changes must be documented separately because Git alone does not reproduce them.
 
 ## Files
 
