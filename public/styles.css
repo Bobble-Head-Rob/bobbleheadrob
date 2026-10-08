@@ -456,7 +456,7 @@ h2 em {
 }
 
 .projects {
-  padding-block: clamp(5rem, 10vw, 9rem);
+  padding-block: clamp(3.5rem, 7vw, 6rem);
   border-top: 1px solid var(--line);
 }
 
@@ -479,7 +479,7 @@ h2 em {
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 32rem;
+  min-height: 29rem;
   overflow: hidden;
   padding: clamp(1.25rem, 3vw, 2rem);
   border: 1px solid var(--line);
@@ -638,6 +638,29 @@ h2 em {
   color: var(--blue);
 }
 
+.status-coming-soon {
+  border-color: rgba(255, 130, 108, 0.35);
+  color: var(--coral);
+}
+
+.tin-can {
+  top: 5rem;
+  right: 1.5rem;
+  width: 7rem;
+  height: 9rem;
+  place-items: center;
+  border: 1px solid rgba(255, 130, 108, 0.45);
+  border-radius: 50% / 12%;
+  background: linear-gradient(to bottom, transparent 12%, rgba(255, 130, 108, 0.09) 12% 88%, transparent 88%);
+  color: var(--coral);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: center;
+  transform: rotate(-12deg);
+}
+
 .card-copy h3 {
   margin-bottom: 0.75rem;
   font-size: clamp(1.8rem, 4vw, 2.8rem);
@@ -775,6 +798,10 @@ footer p {
 }
 
 @media (max-width: 47.999rem) {
+  .dice + .card-copy {
+    padding-top: 15rem;
+  }
+
   .error-hero {
     padding-block: clamp(2.5rem, 9vw, 4rem);
   }
@@ -854,16 +881,15 @@ footer p {
 
 @media (min-width: 70rem) {
   .project-card {
-    min-height: 38rem;
+    min-height: 32rem;
   }
 
-  .project-symbol {
-    width: 15rem;
-    height: 15rem;
+  .project-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .card-copy {
-    padding-top: 16rem;
+  .card-copy h3 {
+    font-size: 2rem;
   }
 }
 

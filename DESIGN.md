@@ -13,7 +13,7 @@ The interface pairs warmth with software precision. It should feel credible firs
   - Coral (`#ff826c`) adds warmth and curiosity
   - Blue (`#6bbfe5`) supports secondary project identity and keyboard focus
 - **Shape:** rounded project surfaces balanced by fine rules, status pills, and schematic illustrations
-- **Imagery:** original CSS and SVG forms only; no placeholder or stock imagery
+- **Imagery:** original CSS and SVG forms on the page; a raster social preview carries the same mark, dark grid, and palette with the “Rob’s workshop” identity; no placeholder or stock imagery
 
 ## Page hierarchy
 
@@ -25,7 +25,7 @@ The interface pairs warmth with software precision. It should feel credible firs
 
 ## Responsive behavior
 
-The layout is mobile-first. Project cards stack on small screens and become a two-column shelf at tablet sizes. The full decorative hero composition scales down and centers beneath the primary action on small screens. When the character is loose, viewport-relative transforms keep it reachable without changing the hero or project layout.
+The layout is mobile-first. Project cards stack on small screens, become a two-column shelf at tablet sizes, and use three columns from 70rem. Guitar Key Compass remains first with its featured surface; company entries stay concise and link to Disdained EGG. The full decorative hero composition scales down and centers beneath the primary action on small screens. When the character is loose, viewport-relative transforms keep it reachable without changing the hero or project layout.
 
 ## Mascot behavior
 

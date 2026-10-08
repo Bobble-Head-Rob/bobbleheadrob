@@ -1,17 +1,41 @@
 # Project Status
 
-Last reviewed: 2026-08-26
+Last reviewed: 2026-10-08
+
+## October 2026 approved refresh
+
+This focused refresh is based on `81872383b8b76c57373756b5f733a4fa873cc7ed`. After review and the phone spacing correction, Rob explicitly approved committing and pushing the five-file refresh for publication through the established automatic Workers Builds workflow.
+
+- Guitar Key Compass stays first and featured.
+- Camp Dice now explicitly identifies its available iPhone and browser versions and continues to link to its authoritative Disdained EGG home.
+- Tin Can Juggle follows Camp Dice, attributed to Disdained EGG and labeled **Coming soon · iPhone**, linking to <https://disdainedegg.com/tin-can-juggle/>. Per the owner, both the app and beta remain pending Apple review; no release date or live availability is promised.
+- The hero action reads “Explore the projects”; the headline, mascot, personal note, contact, and palette are preserved.
+- Modest card height and section spacing adjustments support three columns on wide screens, two on tablets, and stacked cards on phones. An extra 2rem above Camp Dice's copy below 48rem clears its decorative die from the availability label without changing desktop layout.
+- The social preview now reads “ROB’S WORKSHOP.” The previously generated candidate is installed at its native 1731 × 909 size, with matching Open Graph dimensions and descriptive image alternatives.
+
+### Refresh validation and remaining work
+
+The inherited HTML/CSS work was inspected and preserved before further edits. The social image was visually inspected as a standalone asset and rendered in Safari. An earlier computer-access block was resolved in a fresh Safari QA task after the Mac reboot.
+
+Source checks passed for Git whitespace, both JavaScript files' syntax, unique HTML IDs, local asset references, fragment targets, JSON-LD parsing, canonical sitemap URLs, and social PNG dimensions matching metadata. Read-only HTTP checks returned 200 for Guitar Key Compass, both company product pages, and the Disdained EGG homepage. The company pages confirm Camp Dice's App Store/browser availability and Tin's planned free iPhone release without an announced date. The existing local preview at <http://127.0.0.1:8086/> serves the updated page and social asset with HTTP 200.
+
+Independent Safari visual QA passed for desktop and measured 320px/390px iframe viewports, including a recheck after the Camp spacing fix. No horizontal overflow or adjacent-card spacing issues remained; desktop card alignment was preserved. Safari's scrollbars left 303px/373px content widths. Stylesheets, scripts, and images loaded, and the hero, project cards, note, contact, footer, and social image rendered correctly. Corrected Camp and desktop screenshots are saved in Library as `libfile_243217d5a1a881919f469fef1015d0de` and `libfile_3761ad6f9aec8191a3eb553a8abb4e7e`, both version 1. The temporary review harness remains outside the repository and deployment directory.
+
+These iframe checks establish responsive CSS layout, not physical-phone or touch behavior. Reduced-motion-enabled behavior remains untested; the observed browser preference was false. Historical validation below is separate from this refresh's checks.
 
 ## Current release
 
 Workshop identity, project ownership, cross-property source work, and the branded Workers Static Assets 404 are deployed. The canonical apex host and Cloudflare-managed WWW normalization are verified in production. The interactive mascot remains ready for final manual verification.
 
-### Included projects
+### Approved project inventory
 
 | Project | Lifecycle / ownership | Destination |
 | --- | --- | --- |
 | Guitar Key Compass | Live personal project | <https://guitar.bobbleheadrob.com/> |
 | Camp Dice | Graduated / Disdained EGG product | <https://disdainedegg.com/camp-dice/> |
+| Tin Can Juggle | Disdained EGG-owned product / coming soon for iPhone | <https://disdainedegg.com/tin-can-juggle/> |
+
+Company ownership does not imply that the app or beta is released.
 
 ### Analytics
 
@@ -49,7 +73,7 @@ Workshop identity, project ownership, cross-property source work, and the brande
 - Reduced-motion behavior that preserves eye tracking and direct dragging while suppressing fling and sustained motion
 - Visibility, resize, orientation, and offscreen safeguards that reduce work and keep a loose mascot reachable
 
-### Implementation-agent validation completed
+### Historical implementation-agent validation completed (before this refresh)
 
 - Automated headless-browser checks at 1440px, 768px, 390px, and 320px with no horizontal overflow
 - Mouse-event fling plus synthetic touch-event drag, collision reachability, settle-and-return, and return cancellation
